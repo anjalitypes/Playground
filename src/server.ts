@@ -29,7 +29,7 @@ const upload = multer({
 });
 
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static('public'));
+app.use(express.static('public', { index: false }));
 
 // Extract text from uploaded file buffer
 async function extractText(buffer: Buffer, mimetype: string, originalname: string): Promise<string> {
