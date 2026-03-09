@@ -278,9 +278,19 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Serve index.html for all other routes
-app.get('*', (_req, res) => {
+// Landing page at root
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'landing.html'));
+});
+
+// App at /app
+app.get('/app', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+// Fallback to landing for any other route
+app.get('*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'landing.html'));
 });
 
 const server = app.listen(PORT, () => {

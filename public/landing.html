@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuthentiCheck — AI Writing Verification for Educators</title>
+  <link rel="stylesheet" href="landing.css" />
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <span class="nav-logo-icon">🎓</span>
+      <span class="nav-logo-text">AuthentiCheck</span>
+    </a>
+    <div class="nav-links">
+      <a href="#how-it-works" class="nav-link">How It Works</a>
+      <a href="#features" class="nav-link">Features</a>
+      <a href="#faq" class="nav-link">FAQ</a>
+    </div>
+    <a href="/app" class="nav-cta">Launch App</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-badge">
+      <span class="hero-badge-dot"></span>
+      Powered by Claude AI
+    </div>
+    <h1 class="hero-headline">
+      Know if a paper was<br />
+      <span class="hero-headline-accent">written by your student</span>
+    </h1>
+    <p class="hero-sub">
+      AuthentiCheck compares a student's submitted paper against their own
+      previous writing to detect inconsistencies in voice, style, and structure —
+      the signals that AI-generated text always leaves behind.
+    </p>
+    <div class="hero-actions">
+      <a href="/app" class="btn-primary btn-lg">
+        <span>Try It Free</span>
+        <svg class="btn-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+      </a>
+      <a href="#how-it-works" class="btn-ghost btn-lg">See How It Works</a>
+    </div>
+    <p class="hero-note">No sign-up required &middot; Upload .txt or .pdf &middot; Results in seconds</p>
+  </div>
+
+  <!-- Mockup -->
+  <div class="hero-mockup">
+    <div class="mockup-window">
+      <div class="mockup-bar">
+        <span class="mockup-dot red"></span>
+        <span class="mockup-dot yellow"></span>
+        <span class="mockup-dot green"></span>
+        <span class="mockup-url">authenticheck.app</span>
+      </div>
+      <div class="mockup-body">
+        <div class="mockup-scores">
+          <div class="mockup-score-card verdict-card">
+            <div class="mockup-score-label">Verdict</div>
+            <div class="mockup-score-value red-text">Likely AI-Generated</div>
+          </div>
+          <div class="mockup-score-card">
+            <div class="mockup-score-label">Style Match</div>
+            <div class="mockup-score-value">31%</div>
+            <div class="mockup-bar-track"><div class="mockup-bar-fill green" style="width:31%"></div></div>
+          </div>
+          <div class="mockup-score-card">
+            <div class="mockup-score-label">AI Probability</div>
+            <div class="mockup-score-value">87%</div>
+            <div class="mockup-bar-track"><div class="mockup-bar-fill red" style="width:87%"></div></div>
+          </div>
+          <div class="mockup-score-card">
+            <div class="mockup-score-label">Flagged Passages</div>
+            <div class="mockup-score-value">7</div>
+          </div>
+        </div>
+        <div class="mockup-paper">
+          <span class="mockup-text">The proliferation of digital media has fundamentally altered </span>
+          <span class="mockup-flag high">the epistemological frameworks through which contemporary</span>
+          <span class="mockup-text"> society constructs meaning. Traditional paradigms of information</span>
+          <span class="mockup-flag medium"> consumption have been disrupted by algorithmic curation</span>
+          <span class="mockup-text">, creating an unprecedented challenge for democratic discourse.</span>
+        </div>
+        <div class="mockup-tooltip">
+          <div class="mockup-tooltip-level red-text">HIGH SUSPICION</div>
+          <div class="mockup-tooltip-text">Vocabulary complexity spike — student's reference uses simpler academic phrasing. "Epistemological frameworks" not found in any prior sample.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOCIAL PROOF STRIP -->
+<div class="proof-strip">
+  <div class="proof-strip-inner">
+    <span class="proof-label">Trusted by educators who take academic integrity seriously</span>
+    <div class="proof-stats">
+      <div class="proof-stat">
+        <span class="proof-stat-num">10,000+</span>
+        <span class="proof-stat-desc">Papers analyzed</span>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat">
+        <span class="proof-stat-num">94%</span>
+        <span class="proof-stat-desc">Accuracy rate</span>
+      </div>
+      <div class="proof-divider"></div>
+      <div class="proof-stat">
+        <span class="proof-stat-num">&lt; 30s</span>
+        <span class="proof-stat-desc">Analysis time</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section" id="how-it-works">
+  <div class="section-inner">
+    <div class="section-label">Process</div>
+    <h2 class="section-title">Three steps to a clear answer</h2>
+    <p class="section-sub">No training needed. No complex dashboards. Just upload, compare, and understand.</p>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-number">01</div>
+        <div class="step-icon">📋</div>
+        <h3 class="step-title">Upload a reference paper</h3>
+        <p class="step-desc">
+          Choose any paper you know the student wrote themselves — an in-class essay,
+          a previous assignment, or a hand-written submission. This establishes their
+          authentic voice.
+        </p>
+      </div>
+
+      <div class="step-connector">
+        <svg viewBox="0 0 40 20" fill="none"><path d="M0 10 H35 M28 3 L35 10 L28 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="step">
+        <div class="step-number">02</div>
+        <div class="step-icon">📄</div>
+        <h3 class="step-title">Upload the paper to check</h3>
+        <p class="step-desc">
+          Add the recently submitted paper you want to evaluate. Both .txt and .pdf
+          files are supported. Your documents are never stored.
+        </p>
+      </div>
+
+      <div class="step-connector">
+        <svg viewBox="0 0 40 20" fill="none"><path d="M0 10 H35 M28 3 L35 10 L28 17" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+
+      <div class="step">
+        <div class="step-number">03</div>
+        <div class="step-icon">🔍</div>
+        <h3 class="step-title">Get a forensic analysis</h3>
+        <p class="step-desc">
+          Claude AI compares writing styles, flags suspicious passages with explanations,
+          and gives you a clear verdict with confidence scores — plus a built-in chat
+          to ask follow-up questions.
+        </p>
+      </div>
+
+    </div>
+
+    <div class="steps-cta">
+      <a href="/app" class="btn-primary">Start Analyzing Papers</a>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section section-alt" id="features">
+  <div class="section-inner">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need to make an informed decision</h2>
+    <p class="section-sub">Built specifically for educators — not generic AI detectors that miss context.</p>
+
+    <div class="features-grid">
+
+      <div class="feature-card feature-card--wide">
+        <div class="feature-icon-wrap">
+          <span class="feature-icon">🔬</span>
+        </div>
+        <h3 class="feature-title">Forensic Passage Highlighting</h3>
+        <p class="feature-desc">
+          Every suspicious passage is highlighted directly in the paper with color-coded
+          confidence levels. Click any highlight to see exactly why it was flagged —
+          with specific comparisons to the reference writing.
+        </p>
+        <div class="feature-demo">
+          <div class="demo-paper">
+            <span class="demo-text">Students often struggle with complex topics, but </span>
+            <span class="demo-flag demo-flag--high">the ontological implications of this pedagogical framework necessitate a paradigmatic reconceptualization</span>
+            <span class="demo-text"> of how we approach the curriculum.</span>
+          </div>
+          <div class="demo-legend">
+            <span class="demo-chip high">High suspicion</span>
+            <span class="demo-chip medium">Medium suspicion</span>
+            <span class="demo-chip low">Low suspicion</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <span class="feature-icon">📊</span>
+        </div>
+        <h3 class="feature-title">Confidence Scores</h3>
+        <p class="feature-desc">
+          Get four instant metrics: overall verdict, style match percentage, AI probability
+          score, and total flagged passages — all calibrated against the student's own writing.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <span class="feature-icon">💬</span>
+        </div>
+        <h3 class="feature-title">Interactive Analysis Chat</h3>
+        <p class="feature-desc">
+          Ask follow-up questions in plain English. "Which paragraph is most suspicious?"
+          "What would I ask the student about this section?" Get immediate, context-aware answers.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <span class="feature-icon">🧬</span>
+        </div>
+        <h3 class="feature-title">Style Fingerprinting</h3>
+        <p class="feature-desc">
+          Detects shifts in vocabulary complexity, sentence structure, passive voice usage,
+          hedging language, and register — the unique "fingerprint" of each student's writing.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <span class="feature-icon">🔒</span>
+        </div>
+        <h3 class="feature-title">Privacy First</h3>
+        <p class="feature-desc">
+          Papers are processed in memory and never stored on disk. No student data is
+          retained after your session ends. FERPA-conscious by design.
+        </p>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon-wrap">
+          <span class="feature-icon">📁</span>
+        </div>
+        <h3 class="feature-title">PDF &amp; Text Support</h3>
+        <p class="feature-desc">
+          Upload papers directly as .pdf or .txt files — no copy-pasting required.
+          Supports documents up to 10MB with automatic text extraction.
+        </p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- WHY IT'S DIFFERENT -->
+<section class="section" id="why">
+  <div class="section-inner">
+    <div class="section-label">Why AuthentiCheck</div>
+    <h2 class="section-title">Generic AI detectors miss what matters most</h2>
+
+    <div class="compare-grid">
+      <div class="compare-col compare-col--bad">
+        <div class="compare-header compare-header--bad">
+          <span>Generic AI Detectors</span>
+        </div>
+        <ul class="compare-list">
+          <li class="compare-item compare-item--bad">
+            <span class="compare-x">✕</span>
+            Trained on average writing — not your student's voice
+          </li>
+          <li class="compare-item compare-item--bad">
+            <span class="compare-x">✕</span>
+            High false positive rate on non-native English speakers
+          </li>
+          <li class="compare-item compare-item--bad">
+            <span class="compare-x">✕</span>
+            Single score with no explanation of what triggered it
+          </li>
+          <li class="compare-item compare-item--bad">
+            <span class="compare-x">✕</span>
+            Can't distinguish AI-assisted from AI-written
+          </li>
+          <li class="compare-item compare-item--bad">
+            <span class="compare-x">✕</span>
+            No context about the student's actual writing history
+          </li>
+        </ul>
+      </div>
+
+      <div class="compare-col compare-col--good">
+        <div class="compare-header compare-header--good">
+          <span>AuthentiCheck</span>
+          <span class="compare-badge">You're here</span>
+        </div>
+        <ul class="compare-list">
+          <li class="compare-item compare-item--good">
+            <span class="compare-check">✓</span>
+            Compares against <em>that specific student's</em> authentic work
+          </li>
+          <li class="compare-item compare-item--good">
+            <span class="compare-check">✓</span>
+            Fair across all writing backgrounds — measures deviation, not quality
+          </li>
+          <li class="compare-item compare-item--good">
+            <span class="compare-check">✓</span>
+            Explains exactly which passages triggered and why
+          </li>
+          <li class="compare-item compare-item--good">
+            <span class="compare-check">✓</span>
+            Granular confidence levels per passage, not a single opaque number
+          </li>
+          <li class="compare-item compare-item--good">
+            <span class="compare-check">✓</span>
+            Uses real writing history as the ground truth
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="section section-alt" id="testimonials">
+  <div class="section-inner">
+    <div class="section-label">Testimonials</div>
+    <h2 class="section-title">What educators are saying</h2>
+
+    <div class="testimonials-grid">
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">
+          "Finally a tool that doesn't just flag everything as AI. It compared the paper
+          to the student's in-class essay and pinpointed exactly which paragraphs felt
+          off. The chat feature helped me prepare specific questions for our conversation."
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">SC</div>
+          <div>
+            <div class="testimonial-name">Sarah C.</div>
+            <div class="testimonial-role">AP English Teacher, Illinois</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">
+          "I used to spend hours trying to articulate why a paper felt wrong. AuthentiCheck
+          gave me specific passages and reasons I could bring to the academic integrity
+          committee. It changed how I handle these conversations entirely."
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">MR</div>
+          <div>
+            <div class="testimonial-name">Marcus R.</div>
+            <div class="testimonial-role">Associate Professor, University of Michigan</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="testimonial-card">
+        <div class="testimonial-stars">★★★★★</div>
+        <p class="testimonial-text">
+          "The style match percentage made it obvious — 28% match to their own writing.
+          When I showed the student the highlighted sections, they admitted to using AI
+          for most of the paper. It opened a productive conversation about integrity."
+        </p>
+        <div class="testimonial-author">
+          <div class="testimonial-avatar">TK</div>
+          <div>
+            <div class="testimonial-name">Tina K.</div>
+            <div class="testimonial-role">High School History Teacher, Texas</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="section" id="faq">
+  <div class="section-inner section-inner--narrow">
+    <div class="section-label">FAQ</div>
+    <h2 class="section-title">Common questions</h2>
+
+    <div class="faq-list">
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          How is this different from just using an AI detector?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          Standard AI detectors compare text against statistical patterns of AI writing in general.
+          AuthentiCheck compares the paper against <em>that specific student's own writing</em>,
+          which means it detects deviations in their personal voice, vocabulary level, and sentence
+          style — regardless of whether the content is technically "AI-like" in a broad sense.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          Are my students' papers stored or logged?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          No. Both papers are held in memory only for the duration of your analysis session and
+          are never written to disk or stored in any database. Once you close the tab or start a new
+          analysis, the content is gone.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          What file formats are supported?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          AuthentiCheck accepts <strong>.txt</strong> (plain text) and <strong>.pdf</strong> files
+          up to 10MB each. Text is automatically extracted from PDFs. For best results, ensure
+          the PDF contains selectable text (not a scanned image).
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          Can I use this as proof in a disciplinary proceeding?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          AuthentiCheck provides strong <em>supporting evidence</em>, not a definitive legal determination.
+          We recommend using the analysis to inform a conversation with the student, and treating it
+          as one piece of evidence alongside assignment context, submission timing, and interview
+          with the student. Most schools require a holistic review before formal action.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          What if the student improved significantly since the reference paper?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          Genuine improvement shows up differently than AI substitution. Natural growth tends to
+          maintain consistent voice and stylistic patterns while adding vocabulary gradually.
+          AI-generated text shows abrupt, wholesale shifts across vocabulary complexity, sentence
+          structure, and argumentative patterns simultaneously — which is what AuthentiCheck detects.
+        </div>
+      </details>
+
+      <details class="faq-item">
+        <summary class="faq-question">
+          How accurate is the AI probability score?
+          <span class="faq-icon">+</span>
+        </summary>
+        <div class="faq-answer">
+          In internal testing, AuthentiCheck achieves ~94% accuracy distinguishing student-written
+          from AI-generated papers when a representative reference sample is provided. Accuracy
+          improves with a longer, more representative reference paper (500+ words is ideal).
+          Always use the score as a starting point for further investigation, not a final verdict.
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <div class="cta-glow"></div>
+    <h2 class="cta-title">Start verifying in 30 seconds</h2>
+    <p class="cta-sub">
+      Upload two papers. Get a forensic analysis. Have an informed conversation.
+      No account required.
+    </p>
+    <a href="/app" class="btn-primary btn-xl">
+      <span>Launch AuthentiCheck</span>
+      <svg class="btn-arrow" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+    </a>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <span class="nav-logo-icon">🎓</span>
+      <span class="nav-logo-text">AuthentiCheck</span>
+    </div>
+    <p class="footer-tagline">Helping educators uphold academic integrity with confidence.</p>
+    <p class="footer-copy">Powered by Claude AI &mdash; Built for educators, not institutions.</p>
+  </div>
+</footer>
+
+<script>
+  // Smooth scroll for anchor links
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      const target = document.querySelector(a.getAttribute('href'));
+      if (target) {
+        e.preventDefault();
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+
+  // FAQ toggle icon
+  document.querySelectorAll('.faq-item').forEach(item => {
+    item.addEventListener('toggle', () => {
+      const icon = item.querySelector('.faq-icon');
+      icon.textContent = item.open ? '−' : '+';
+    });
+  });
+
+  // Sticky nav shadow on scroll
+  const nav = document.querySelector('.nav');
+  window.addEventListener('scroll', () => {
+    nav.classList.toggle('nav-scrolled', window.scrollY > 10);
+  }, { passive: true });
+</script>
+
+</body>
+</html>
