@@ -1,7 +1,6 @@
 import express, { Request, Response } from 'express';
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
 import Anthropic from '@anthropic-ai/sdk';
 import pdfParse from 'pdf-parse';
 
@@ -29,7 +28,10 @@ const upload = multer({
 });
 
 app.use(express.json({ limit: '5mb' }));
-app.use(express.static('public'));
+
+// Serve each app's static assets from its own sub-folder
+app.use('/todo',     express.static(path.join(__dirname, '..', 'public', 'todo')));
+app.use('/detector', express.static(path.join(__dirname, '..', 'public', 'detector')));
 
 // Extract text from uploaded file buffer
 async function extractText(buffer: Buffer, mimetype: string, originalname: string): Promise<string> {
@@ -278,8 +280,17 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Serve index.html for all other routes
-app.get('*', (_req, res) => {
+// Per-app catch-all (SPA-style deep links)
+app.get('/todo*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'todo', 'index.html'));
+});
+
+app.get('/detector*', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'detector', 'index.html'));
+});
+
+// Landing page
+app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
 

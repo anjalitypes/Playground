@@ -3,82 +3,111 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Visual Todo Lists</title>
-  <link rel="stylesheet" href="style.css" />
+  <title>My Projects</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0f1117;
+      --card:     #1a1d2e;
+      --border:   #2a2d45;
+      --accent:   #6366f1;
+      --text:     #e8eaf6;
+      --muted:    #8892b0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      margin-bottom: 0.4rem;
+    }
+
+    .subtitle {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .projects {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      width: 100%;
+      max-width: 640px;
+    }
+
+    .project-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.5rem;
+      text-decoration: none;
+      color: inherit;
+      transition: border-color 0.2s, transform 0.15s, box-shadow 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .project-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(99,102,241,0.2);
+    }
+
+    .project-icon { font-size: 2rem; margin-bottom: 0.25rem; }
+
+    .project-name {
+      font-size: 1.05rem;
+      font-weight: 600;
+    }
+
+    .project-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .project-url {
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-top: 0.5rem;
+    }
+  </style>
 </head>
 <body>
+  <h1>My Projects</h1>
+  <p class="subtitle">Pick an app to open</p>
 
-<!-- SIDEBAR -->
-<aside class="sidebar">
-  <div class="sidebar-header">
-    <div class="app-brand">
-      <span class="brand-icon">✅</span>
-      <span class="brand-name">Visual Lists</span>
-    </div>
-  </div>
+  <div class="projects">
 
-  <div class="sidebar-lists" id="sidebar-lists">
-    <!-- List items rendered here -->
-  </div>
+    <a class="project-card" href="/todo">
+      <div class="project-icon">✅</div>
+      <div class="project-name">Visual Todo Lists</div>
+      <div class="project-desc">Todo lists that automatically fetch a photo for each item. Multiple lists, checkboxes, and local storage.</div>
+      <div class="project-url">localhost:3000/todo</div>
+    </a>
 
-  <div class="sidebar-footer">
-    <button class="new-list-btn" id="new-list-btn">
-      <span class="new-list-plus">+</span> New List
-    </button>
-  </div>
-</aside>
-
-<!-- MAIN CONTENT -->
-<main class="main">
-
-  <!-- Empty state -->
-  <div class="main-empty" id="main-empty">
-    <div class="empty-icon">📋</div>
-    <h2 class="empty-title">No list selected</h2>
-    <p class="empty-sub">Create a new list to get started</p>
-    <button class="create-first-btn" id="create-first-btn">Create your first list</button>
-  </div>
-
-  <!-- List view -->
-  <div class="list-view" id="list-view" hidden>
-
-    <div class="list-header">
-      <div class="list-header-left">
-        <input class="list-title-input" id="list-title-input" type="text" placeholder="List name..." spellcheck="false" />
-        <div class="list-meta" id="list-meta"></div>
-      </div>
-      <button class="delete-list-btn" id="delete-list-btn" title="Delete this list">🗑 Delete List</button>
-    </div>
-
-    <!-- Progress bar -->
-    <div class="progress-bar-wrap" id="progress-bar-wrap">
-      <div class="progress-bar-track">
-        <div class="progress-bar-fill" id="progress-bar-fill"></div>
-      </div>
-    </div>
-
-    <!-- Todos -->
-    <div class="todos-container" id="todos-container">
-      <!-- Todo items rendered here -->
-    </div>
-
-    <!-- Add todo input -->
-    <div class="add-todo-area">
-      <input
-        class="add-todo-input"
-        id="add-todo-input"
-        type="text"
-        placeholder="What do you need to do? Press Enter to add with image..."
-        autocomplete="off"
-        spellcheck="true"
-      />
-      <button class="add-todo-btn" id="add-todo-btn">Add</button>
-    </div>
+    <a class="project-card" href="/detector">
+      <div class="project-icon">🎓</div>
+      <div class="project-name">AI Paper Detector</div>
+      <div class="project-desc">Upload two papers and detect whether the new one matches the student's writing style or was AI-generated.</div>
+      <div class="project-url">localhost:3000/detector</div>
+    </a>
 
   </div>
-
-</main>
-
-<script src="app.js"></script>
 </body>
 </html>
