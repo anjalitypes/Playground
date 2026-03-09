@@ -1,645 +1,458 @@
 /* ============================================================
-   AI Paper Detection Tool — Frontend
+   Visual Todo Lists — App Logic
    ============================================================ */
 
-// State
-let newPaperFile = null;
-let refPaperFile = null;
-let analysisState = null; // { newPaperText, referencePaperText, annotations }
-let chatHistory = [];
-let isChatStreaming = false;
-
-// Elements
-const newPaperInput = document.getElementById('new-paper-input');
-const refPaperInput = document.getElementById('ref-paper-input');
-const newPaperZone = document.getElementById('new-paper-zone');
-const refPaperZone = document.getElementById('ref-paper-zone');
-const newPaperSelected = document.getElementById('new-paper-selected');
-const refPaperSelected = document.getElementById('ref-paper-selected');
-const newPaperPlaceholder = document.getElementById('new-paper-placeholder');
-const refPaperPlaceholder = document.getElementById('ref-paper-placeholder');
-const newPaperName = document.getElementById('new-paper-name');
-const refPaperName = document.getElementById('ref-paper-name');
-const newPaperRemove = document.getElementById('new-paper-remove');
-const refPaperRemove = document.getElementById('ref-paper-remove');
-const analyzeBtn = document.getElementById('analyze-btn');
-const analyzeBtnText = document.getElementById('analyze-btn-text');
-const statusBar = document.getElementById('status-bar');
-const statusText = document.getElementById('status-text');
-const resultsSection = document.getElementById('results-section');
-const annotatedPaper = document.getElementById('annotated-paper');
-const chatMessages = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
-const chatSend = document.getElementById('chat-send');
-const resetBtn = document.getElementById('reset-btn');
-const annotationTooltip = document.getElementById('annotation-tooltip');
-const tooltipLevel = document.getElementById('tooltip-level');
-const tooltipReason = document.getElementById('tooltip-reason');
-const verdictValue = document.getElementById('verdict-value');
-const matchValue = document.getElementById('match-value');
-const matchBar = document.getElementById('match-bar');
-const aiValue = document.getElementById('ai-value');
-const aiBar = document.getElementById('ai-bar');
-const flagsValue = document.getElementById('flags-value');
-
 // ============================================================
-// FILE UPLOAD HANDLING
+// STATE & PERSISTENCE
 // ============================================================
 
-function setupFileInput(input, zone, placeholder, selected, nameEl, removeBtn, setter) {
-  // Click to upload
-  zone.addEventListener('click', (e) => {
-    if (e.target === removeBtn) return;
-    input.click();
-  });
+let state = {
+  lists: [],
+  currentListId: null,
+};
 
-  input.addEventListener('change', () => {
-    if (input.files[0]) setFile(input.files[0]);
-  });
-
-  // Drag and drop
-  zone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    zone.classList.add('dragover');
-  });
-
-  zone.addEventListener('dragleave', () => {
-    zone.classList.remove('dragover');
-  });
-
-  zone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) setFile(file);
-  });
-
-  // Remove button
-  removeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setter(null);
-    input.value = '';
-    placeholder.hidden = false;
-    selected.hidden = true;
-    updateAnalyzeBtn();
-  });
-
-  function setFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['txt', 'pdf'].includes(ext)) {
-      showError('Only .txt and .pdf files are supported.');
-      return;
-    }
-    setter(file);
-    nameEl.textContent = file.name;
-    placeholder.hidden = true;
-    selected.hidden = false;
-    updateAnalyzeBtn();
-  }
-}
-
-setupFileInput(
-  newPaperInput, newPaperZone, newPaperPlaceholder, newPaperSelected,
-  newPaperName, newPaperRemove, (f) => { newPaperFile = f; }
-);
-
-setupFileInput(
-  refPaperInput, refPaperZone, refPaperPlaceholder, refPaperSelected,
-  refPaperName, refPaperRemove, (f) => { refPaperFile = f; }
-);
-
-function updateAnalyzeBtn() {
-  analyzeBtn.disabled = !(newPaperFile && refPaperFile);
-}
-
-// ============================================================
-// ANALYZE
-// ============================================================
-
-analyzeBtn.addEventListener('click', startAnalysis);
-
-async function startAnalysis() {
-  if (!newPaperFile || !refPaperFile) return;
-
-  // Reset results
-  analysisState = null;
-  chatHistory = [];
-  renderChatMessages();
-  annotatedPaper.innerHTML = '';
-
-  // Update UI state
-  analyzeBtn.disabled = true;
-  analyzeBtn.classList.add('loading');
-  analyzeBtnText.textContent = 'Analyzing...';
-  statusBar.classList.remove('hidden');
-  setStatus('Uploading papers...');
-  resultsSection.classList.add('hidden');
-
-  const formData = new FormData();
-  formData.append('newPaper', newPaperFile);
-  formData.append('referencePaper', refPaperFile);
-
+function saveState() {
   try {
-    const response = await fetch('/api/analyze', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Upload failed');
-    }
-
-    resultsSection.classList.remove('hidden');
-    await processSSEStream(response.body);
-
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    analyzeBtn.disabled = false;
-    analyzeBtn.classList.remove('loading');
-    analyzeBtnText.textContent = 'Analyze Papers';
-    statusBar.classList.add('hidden');
+    localStorage.setItem('visualTodoLists_v1', JSON.stringify(state));
+  } catch (e) {
+    // localStorage full or unavailable — silently ignore
   }
 }
 
-async function processSSEStream(body) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let currentAssistantEl = null;
-  let currentAssistantText = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop(); // Keep incomplete line
-
-    for (const line of lines) {
-      if (line.startsWith('event: ')) {
-        // Handled below with data
-        continue;
-      }
-      if (!line.startsWith('data: ')) continue;
-
-      const dataStr = line.slice(6).trim();
-      if (!dataStr) continue;
-
-      let event = 'message';
-      // Scan back through lines to find the event type
-      const lineIdx = lines.indexOf(line);
-      for (let i = lineIdx - 1; i >= 0; i--) {
-        if (lines[i].startsWith('event: ')) {
-          event = lines[i].slice(7).trim();
-          break;
-        }
-      }
-
-      try {
-        const data = JSON.parse(dataStr);
-        handleSSEEvent(event, data, {
-          getCurrentAssistantEl: () => currentAssistantEl,
-          setCurrentAssistantEl: (el) => { currentAssistantEl = el; },
-          getCurrentAssistantText: () => currentAssistantText,
-          setCurrentAssistantText: (t) => { currentAssistantText = t; },
-        });
-      } catch { /* skip malformed */ }
-    }
-  }
-
-  // Finalize any streaming message
-  if (currentAssistantEl) {
-    finalizeStreamingMessage(currentAssistantEl, currentAssistantText);
-  }
-}
-
-function handleSSEEvent(event, data, ctx) {
-  switch (event) {
-    case 'status':
-      setStatus(data.message);
-      break;
-
-    case 'paper_text':
-      // Store paper text, render placeholder while waiting for annotations
-      if (!analysisState) analysisState = {};
-      analysisState.newPaperText = data.newPaperText;
-      annotatedPaper.textContent = 'Analyzing passages...';
-      annotatedPaper.style.color = 'var(--text-muted)';
-      break;
-
-    case 'annotations': {
-      if (!analysisState) analysisState = {};
-      analysisState.annotations = data;
-
-      // Update score cards
-      verdictValue.textContent = data.verdict || '—';
-      matchValue.textContent = `${data.match_rate ?? '—'}%`;
-      matchBar.style.width = `${data.match_rate ?? 0}%`;
-      aiValue.textContent = `${data.ai_probability ?? '—'}%`;
-      aiBar.style.width = `${data.ai_probability ?? 0}%`;
-      flagsValue.textContent = data.annotations?.length ?? '—';
-
-      // Color the verdict
-      const prob = data.ai_probability ?? 0;
-      if (prob >= 70) verdictValue.style.color = 'var(--red-high)';
-      else if (prob >= 40) verdictValue.style.color = 'var(--yellow)';
-      else verdictValue.style.color = 'var(--green)';
-
-      // Render annotated paper
-      if (analysisState.newPaperText) {
-        renderAnnotatedPaper(analysisState.newPaperText, data.annotations || []);
-      }
-
-      setStatus('Generating detailed analysis...');
-      break;
-    }
-
-    case 'chat_chunk': {
-      if (!ctx.getCurrentAssistantEl()) {
-        const el = appendChatMessage('assistant', '', true);
-        ctx.setCurrentAssistantEl(el);
-        ctx.setCurrentAssistantText('');
-      }
-      const newText = ctx.getCurrentAssistantText() + data.text;
-      ctx.setCurrentAssistantText(newText);
-      updateStreamingMessage(ctx.getCurrentAssistantEl(), newText);
-      break;
-    }
-
-    case 'chat_done': {
-      if (ctx.getCurrentAssistantEl()) {
-        finalizeStreamingMessage(ctx.getCurrentAssistantEl(), ctx.getCurrentAssistantText());
-        ctx.setCurrentAssistantEl(null);
-        ctx.setCurrentAssistantText('');
-      }
-
-      // Save context for follow-up chat
-      if (data.newPaperText) {
-        if (!analysisState) analysisState = {};
-        analysisState.newPaperText = data.newPaperText;
-        analysisState.referencePaperText = data.referencePaperText;
-      }
-
-      // Save the analysis message to history
-      const lastMsg = chatMessages.lastElementChild;
-      if (lastMsg) {
-        const bubble = lastMsg.querySelector('.msg-bubble');
-        if (bubble) {
-          chatHistory.push({ role: 'assistant', content: bubble.textContent });
-        }
-      }
-
-      // Enable chat
-      chatInput.disabled = false;
-      chatSend.disabled = false;
-      chatInput.focus();
-      break;
-    }
-
-    case 'error':
-      showError(data.message);
-      break;
-  }
-}
-
-// ============================================================
-// PAPER ANNOTATION RENDERING
-// ============================================================
-
-function renderAnnotatedPaper(text, annotations) {
-  annotatedPaper.style.color = '';
-
-  if (!annotations || annotations.length === 0) {
-    annotatedPaper.textContent = text;
-    return;
-  }
-
-  // Build sorted list of [start, end, annotation] ranges
-  const ranges = [];
-
-  for (const ann of annotations) {
-    if (!ann.flagged_text) continue;
-    const idx = text.indexOf(ann.flagged_text);
-    if (idx === -1) {
-      // Try case-insensitive search
-      const lowerText = text.toLowerCase();
-      const lowerFlagged = ann.flagged_text.toLowerCase();
-      const cidx = lowerText.indexOf(lowerFlagged);
-      if (cidx !== -1) {
-        ranges.push({ start: cidx, end: cidx + ann.flagged_text.length, ann });
-      }
-      continue;
-    }
-    ranges.push({ start: idx, end: idx + ann.flagged_text.length, ann });
-  }
-
-  // Sort by start position, handle overlaps by keeping longer/earlier range
-  ranges.sort((a, b) => a.start - b.start || b.end - a.end);
-
-  // Remove overlapping ranges
-  const merged = [];
-  for (const r of ranges) {
-    if (merged.length === 0 || r.start >= merged[merged.length - 1].end) {
-      merged.push(r);
-    }
-  }
-
-  // Build HTML
-  const fragment = document.createDocumentFragment();
-  let cursor = 0;
-
-  for (const { start, end, ann } of merged) {
-    // Text before
-    if (start > cursor) {
-      fragment.appendChild(document.createTextNode(text.slice(cursor, start)));
-    }
-
-    // Flagged span
-    const span = document.createElement('span');
-    span.className = `flagged flagged--${ann.suspicion_level || 'medium'}`;
-    span.textContent = text.slice(start, end);
-    span.dataset.reason = ann.reason;
-    span.dataset.level = ann.suspicion_level || 'medium';
-
-    span.addEventListener('mouseenter', (e) => showTooltip(e, ann));
-    span.addEventListener('mousemove', positionTooltip);
-    span.addEventListener('mouseleave', hideTooltip);
-    span.addEventListener('click', () => {
-      // Scroll to annotation in paper
-      span.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-
-    fragment.appendChild(span);
-    cursor = end;
-  }
-
-  // Remaining text
-  if (cursor < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(cursor)));
-  }
-
-  annotatedPaper.innerHTML = '';
-  annotatedPaper.appendChild(fragment);
-}
-
-// ============================================================
-// TOOLTIP
-// ============================================================
-
-function showTooltip(e, ann) {
-  tooltipLevel.textContent = `${ann.suspicion_level?.toUpperCase() || 'MEDIUM'} SUSPICION`;
-  tooltipLevel.className = `tooltip-level ${ann.suspicion_level || 'medium'}`;
-  tooltipReason.textContent = ann.reason;
-  annotationTooltip.classList.remove('hidden');
-  positionTooltip(e);
-}
-
-function positionTooltip(e) {
-  const tooltip = annotationTooltip;
-  const tw = tooltip.offsetWidth || 280;
-  const th = tooltip.offsetHeight || 80;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  let left = e.clientX + 16;
-  let top = e.clientY + 16;
-
-  if (left + tw > vw - 16) left = e.clientX - tw - 16;
-  if (top + th > vh - 16) top = e.clientY - th - 16;
-
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
-}
-
-function hideTooltip() {
-  annotationTooltip.classList.add('hidden');
-}
-
-// ============================================================
-// CHAT
-// ============================================================
-
-chatSend.addEventListener('click', sendChatMessage);
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendChatMessage();
-  }
-});
-
-async function sendChatMessage() {
-  const message = chatInput.value.trim();
-  if (!message || isChatStreaming || !analysisState) return;
-
-  isChatStreaming = true;
-  chatInput.disabled = true;
-  chatSend.disabled = true;
-  chatInput.value = '';
-
-  // Add user message to UI and history
-  appendChatMessage('user', message);
-  chatHistory.push({ role: 'user', content: message });
-
-  let assistantEl = null;
-  let assistantText = '';
-
+function loadState() {
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        history: chatHistory.slice(-10), // Keep last 10 turns
-        newPaperText: analysisState.newPaperText,
-        referencePaperText: analysisState.referencePaperText,
-        annotations: analysisState.annotations,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Chat request failed');
-    }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let lastEvent = 'message';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          lastEvent = line.slice(7).trim();
-          continue;
-        }
-        if (!line.startsWith('data: ')) continue;
-
-        const dataStr = line.slice(6).trim();
-        if (!dataStr) continue;
-
-        try {
-          const data = JSON.parse(dataStr);
-
-          if (lastEvent === 'chat_chunk') {
-            if (!assistantEl) {
-              assistantEl = appendChatMessage('assistant', '', true);
-            }
-            assistantText += data.text;
-            updateStreamingMessage(assistantEl, assistantText);
-          } else if (lastEvent === 'chat_done') {
-            if (assistantEl) {
-              finalizeStreamingMessage(assistantEl, assistantText);
-              chatHistory.push({ role: 'assistant', content: assistantText });
-            }
-          } else if (lastEvent === 'error') {
-            showError(data.message);
-          }
-        } catch { /* skip */ }
+    const raw = localStorage.getItem('visualTodoLists_v1');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.lists)) {
+        state = parsed;
       }
     }
-
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    isChatStreaming = false;
-    chatInput.disabled = false;
-    chatSend.disabled = false;
-    chatInput.focus();
+  } catch (e) {
+    state = { lists: [], currentListId: null };
   }
 }
-
-// ============================================================
-// CHAT UI HELPERS
-// ============================================================
-
-function appendChatMessage(role, text, streaming = false) {
-  const wrapper = document.createElement('div');
-  wrapper.className = `chat-msg chat-msg--${role}`;
-
-  const label = document.createElement('div');
-  label.className = 'msg-label';
-  label.textContent = role === 'user' ? 'You' : 'AI Analyst';
-
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-
-  if (streaming) {
-    bubble.innerHTML = '<span class="typing-cursor"></span>';
-  } else {
-    bubble.textContent = text;
-  }
-
-  wrapper.appendChild(label);
-  wrapper.appendChild(bubble);
-  chatMessages.appendChild(wrapper);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-
-  return wrapper;
-}
-
-function updateStreamingMessage(el, text) {
-  const bubble = el.querySelector('.msg-bubble');
-  if (!bubble) return;
-  bubble.innerHTML = escapeHtml(text) + '<span class="typing-cursor"></span>';
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function finalizeStreamingMessage(el, text) {
-  const bubble = el.querySelector('.msg-bubble');
-  if (!bubble) return;
-  bubble.textContent = text;
-  chatMessages.scrollTop = chatMessages.scrollHeight;
-}
-
-function renderChatMessages() {
-  chatMessages.innerHTML = '';
-}
-
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-    .replace(/\n/g, '<br>');
-}
-
-// ============================================================
-// RESET
-// ============================================================
-
-resetBtn.addEventListener('click', () => {
-  analysisState = null;
-  chatHistory = [];
-  newPaperFile = null;
-  refPaperFile = null;
-
-  // Reset file inputs
-  newPaperInput.value = '';
-  refPaperInput.value = '';
-  newPaperPlaceholder.hidden = false;
-  newPaperSelected.hidden = true;
-  refPaperPlaceholder.hidden = false;
-  refPaperSelected.hidden = true;
-
-  // Reset UI
-  resultsSection.classList.add('hidden');
-  statusBar.classList.add('hidden');
-  renderChatMessages();
-  annotatedPaper.innerHTML = '';
-  chatInput.disabled = true;
-  chatSend.disabled = true;
-  verdictValue.textContent = '—';
-  matchValue.textContent = '—';
-  aiValue.textContent = '—';
-  flagsValue.textContent = '—';
-  matchBar.style.width = '0%';
-  aiBar.style.width = '0%';
-
-  updateAnalyzeBtn();
-
-  // Scroll back to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
 
 // ============================================================
 // UTILITIES
 // ============================================================
 
-function setStatus(msg) {
-  statusText.textContent = msg;
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 }
 
-function showError(msg) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'chat-msg chat-msg--assistant';
+/** Simple numeric hash for consistent image seeds */
+function hashString(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = Math.imul(31, h) + str.charCodeAt(i) | 0;
+  }
+  return Math.abs(h) % 10000;
+}
 
-  const label = document.createElement('div');
-  label.className = 'msg-label';
-  label.textContent = 'Error';
+/** Stop-words to skip when building image search keywords */
+const STOP_WORDS = new Set([
+  'a','an','the','and','or','but','in','on','at','to','for','of','with',
+  'by','from','up','about','into','is','are','was','were','be','been',
+  'have','has','had','do','does','did','will','would','shall','should',
+  'may','might','must','can','could','my','your','his','her','its','their',
+  'this','that','i','you','he','she','it','we','they','get','go','make',
+  'take','some','any','all','more','no','not','so','very','just','now',
+  'also','need','want','buy','pick','call','send','check','look','find',
+  'new','old','big','small','good','bad','one','two','three','also','then',
+  'than','over','after','before','again','few','own','too','out','off',
+  'put','set','run','try','let','ask','tell','give','keep','start','stop',
+  'use','help','add','see','show','plan','done','todo','task','item','list',
+  'today','tomorrow','week','month','next','last','soon',
+]);
 
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-  bubble.style.borderColor = 'var(--red-high)';
-  bubble.style.color = 'var(--red-high)';
-  bubble.textContent = `⚠️ ${msg}`;
+/** Extract 1–2 meaningful keywords from todo text for image search */
+function extractKeywords(text) {
+  const words = text
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2 && !STOP_WORDS.has(w));
 
-  wrapper.appendChild(label);
-  wrapper.appendChild(bubble);
-  chatMessages.appendChild(wrapper);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  if (words.length > 0) return words.slice(0, 2).join(',');
 
-  resultsSection.classList.remove('hidden');
+  // Fallback: take any word longer than 2 chars ignoring stop words only
+  const fallback = text
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, ' ')
+    .split(/\s+/)
+    .filter(w => w.length > 2);
+
+  return fallback.slice(0, 1).join(',') || 'task';
+}
+
+/** Build a loremflickr URL that always returns the same image for the same item */
+function getImageUrl(item) {
+  const kw = item.imageKeywords || 'task';
+  const seed = item.imageSeed || 1;
+  return `https://loremflickr.com/128/128/${encodeURIComponent(kw)}?lock=${seed}`;
+}
+
+function escapeHtml(text) {
+  const d = document.createElement('div');
+  d.textContent = text;
+  return d.innerHTML;
+}
+
+// ============================================================
+// LIST OPERATIONS
+// ============================================================
+
+function createList(name) {
+  const list = {
+    id: generateId(),
+    name: name || 'New List',
+    createdAt: Date.now(),
+    items: [],
+  };
+  state.lists.unshift(list);
+  state.currentListId = list.id;
+  saveState();
+  return list;
+}
+
+function deleteList(listId) {
+  state.lists = state.lists.filter(l => l.id !== listId);
+  if (state.currentListId === listId) {
+    state.currentListId = state.lists[0]?.id || null;
+  }
+  saveState();
+}
+
+function renameList(listId, name) {
+  const list = state.lists.find(l => l.id === listId);
+  if (list) { list.name = name; saveState(); }
+}
+
+function getCurrentList() {
+  return state.lists.find(l => l.id === state.currentListId) || null;
+}
+
+// ============================================================
+// TODO OPERATIONS
+// ============================================================
+
+function addTodoItem(text) {
+  const list = getCurrentList();
+  if (!list || !text.trim()) return null;
+
+  const trimmed = text.trim();
+  const item = {
+    id: generateId(),
+    text: trimmed,
+    done: false,
+    imageKeywords: extractKeywords(trimmed),
+    imageSeed: hashString(trimmed + generateId()),
+    createdAt: Date.now(),
+  };
+  list.items.push(item);
+  saveState();
+  return item;
+}
+
+function toggleTodoItem(listId, itemId) {
+  const list = state.lists.find(l => l.id === listId);
+  if (!list) return;
+  const item = list.items.find(i => i.id === itemId);
+  if (item) { item.done = !item.done; saveState(); }
+}
+
+function deleteTodoItem(listId, itemId) {
+  const list = state.lists.find(l => l.id === listId);
+  if (!list) return;
+  list.items = list.items.filter(i => i.id !== itemId);
+  saveState();
+}
+
+// ============================================================
+// DOM REFERENCES
+// ============================================================
+
+const sidebarListsEl  = document.getElementById('sidebar-lists');
+const mainEmptyEl     = document.getElementById('main-empty');
+const listViewEl      = document.getElementById('list-view');
+const listTitleInput  = document.getElementById('list-title-input');
+const listMetaEl      = document.getElementById('list-meta');
+const progressFillEl  = document.getElementById('progress-bar-fill');
+const todosContainerEl= document.getElementById('todos-container');
+const addTodoInputEl  = document.getElementById('add-todo-input');
+
+// ============================================================
+// RENDER
+// ============================================================
+
+function render() {
+  renderSidebar();
+  renderMain();
+}
+
+/* ---- Sidebar ---- */
+function renderSidebar() {
+  sidebarListsEl.innerHTML = '';
+
+  if (state.lists.length === 0) {
+    sidebarListsEl.innerHTML = '<div class="sidebar-empty">No lists yet</div>';
+    return;
+  }
+
+  for (const list of state.lists) {
+    const doneCount  = list.items.filter(i => i.done).length;
+    const totalCount = list.items.length;
+    const isActive   = list.id === state.currentListId;
+
+    const item = document.createElement('div');
+    item.className = 'sidebar-list-item' + (isActive ? ' active' : '');
+    item.dataset.listId = list.id;
+
+    item.innerHTML = `
+      <div class="sidebar-list-icon">📋</div>
+      <div class="sidebar-list-info">
+        <div class="sidebar-list-name">${escapeHtml(list.name)}</div>
+        <div class="sidebar-list-count">
+          ${totalCount === 0
+            ? 'No items'
+            : `${totalCount} item${totalCount !== 1 ? 's' : ''} · ${doneCount} done`}
+        </div>
+      </div>
+    `;
+
+    item.addEventListener('click', () => {
+      state.currentListId = list.id;
+      saveState();
+      render();
+      addTodoInputEl.focus();
+    });
+
+    sidebarListsEl.appendChild(item);
+  }
+}
+
+/* ---- Main area ---- */
+function renderMain() {
+  const list = getCurrentList();
+
+  if (!list) {
+    mainEmptyEl.hidden = false;
+    listViewEl.hidden  = true;
+    return;
+  }
+
+  mainEmptyEl.hidden = false;
+  mainEmptyEl.style.display = 'none';
+  listViewEl.hidden  = false;
+
+  // Title
+  if (document.activeElement !== listTitleInput) {
+    listTitleInput.value = list.name;
+  }
+
+  // Meta + progress
+  const total = list.items.length;
+  const done  = list.items.filter(i => i.done).length;
+  if (total === 0) {
+    listMetaEl.textContent    = 'No items yet — add one below';
+    progressFillEl.style.width = '0%';
+  } else {
+    const pct = Math.round((done / total) * 100);
+    listMetaEl.textContent     = `${done} of ${total} completed · ${pct}%`;
+    progressFillEl.style.width = `${pct}%`;
+  }
+
+  renderTodos(list);
+}
+
+/* ---- Todo list ---- */
+function renderTodos(list) {
+  // Keep track of existing item elements by id to avoid full re-render flicker
+  const existingEls = {};
+  todosContainerEl.querySelectorAll('.todo-item[data-item-id]').forEach(el => {
+    existingEls[el.dataset.itemId] = el;
+  });
+
+  // Sort: pending first, done last (stable within each group by creation time)
+  const sorted = [
+    ...list.items.filter(i => !i.done).sort((a, b) => a.createdAt - b.createdAt),
+    ...list.items.filter(i =>  i.done).sort((a, b) => a.createdAt - b.createdAt),
+  ];
+
+  if (sorted.length === 0) {
+    todosContainerEl.innerHTML = '<div class="todos-empty">No todos yet — add one below!</div>';
+    return;
+  }
+
+  // Build fragment
+  const frag = document.createDocumentFragment();
+  const newIds = new Set();
+
+  for (const item of sorted) {
+    newIds.add(item.id);
+
+    let el = existingEls[item.id];
+    if (!el) {
+      // Brand-new item: create it
+      el = buildTodoElement(list.id, item);
+    } else {
+      // Existing: sync done state without rebuilding
+      syncTodoElement(el, item);
+    }
+
+    frag.appendChild(el);
+  }
+
+  todosContainerEl.innerHTML = '';
+  todosContainerEl.appendChild(frag);
+}
+
+/* Build a todo element from scratch */
+function buildTodoElement(listId, item) {
+  const el = document.createElement('div');
+  el.className = 'todo-item' + (item.done ? ' done' : '');
+  el.dataset.itemId = item.id;
+
+  const imgUrl = getImageUrl(item);
+
+  el.innerHTML = `
+    <label class="todo-checkbox-label" title="${item.done ? 'Mark as incomplete' : 'Mark as done'}">
+      <input type="checkbox" class="todo-checkbox" ${item.done ? 'checked' : ''} />
+      <span class="todo-checkmark"></span>
+    </label>
+    <div class="todo-image-wrap">
+      <img class="todo-image" src="${escapeHtml(imgUrl)}" alt="" loading="lazy" decoding="async" />
+      <div class="todo-image-skeleton"></div>
+    </div>
+    <span class="todo-text">${escapeHtml(item.text)}</span>
+    <button class="todo-delete-btn" title="Remove this item">✕</button>
+  `;
+
+  // Image load handling
+  const img      = el.querySelector('.todo-image');
+  const skeleton = el.querySelector('.todo-image-skeleton');
+
+  img.addEventListener('load', () => {
+    img.classList.add('loaded');
+    skeleton.style.display = 'none';
+  });
+
+  img.addEventListener('error', () => {
+    img.style.display = 'none';
+    skeleton.innerHTML = '🖼';
+    skeleton.classList.add('image-error');
+    skeleton.title = 'Image unavailable';
+  });
+
+  // Checkbox toggle
+  const checkbox = el.querySelector('.todo-checkbox');
+  checkbox.addEventListener('change', () => {
+    toggleTodoItem(listId, item.id);
+    render();
+  });
+
+  // Delete
+  const deleteBtn = el.querySelector('.todo-delete-btn');
+  deleteBtn.addEventListener('click', () => {
+    el.classList.add('removing');
+    setTimeout(() => {
+      deleteTodoItem(listId, item.id);
+      render();
+    }, 200);
+  });
+
+  return el;
+}
+
+/** Sync done/undone state on an already-rendered element */
+function syncTodoElement(el, item) {
+  if (item.done) {
+    el.classList.add('done');
+  } else {
+    el.classList.remove('done');
+  }
+  const cb = el.querySelector('.todo-checkbox');
+  if (cb) cb.checked = item.done;
+  const label = el.querySelector('.todo-checkbox-label');
+  if (label) label.title = item.done ? 'Mark as incomplete' : 'Mark as done';
+}
+
+// ============================================================
+// EVENT HANDLERS
+// ============================================================
+
+/* New list button */
+document.getElementById('new-list-btn').addEventListener('click', () => {
+  createList();
+  render();
+  setTimeout(() => {
+    listTitleInput.select();
+  }, 30);
+});
+
+/* "Create first list" CTA */
+document.getElementById('create-first-btn').addEventListener('click', () => {
+  createList();
+  render();
+  setTimeout(() => listTitleInput.select(), 30);
+});
+
+/* Rename list while typing */
+listTitleInput.addEventListener('input', () => {
+  const list = getCurrentList();
+  if (!list) return;
+  renameList(list.id, listTitleInput.value);
+  renderSidebar(); // only update sidebar name, not todos
+});
+
+listTitleInput.addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTodoInputEl.focus();
+});
+
+/* Delete current list */
+document.getElementById('delete-list-btn').addEventListener('click', () => {
+  const list = getCurrentList();
+  if (!list) return;
+  const msg = list.items.length > 0
+    ? `Delete "${list.name}" and all ${list.items.length} item${list.items.length !== 1 ? 's' : ''}?`
+    : `Delete "${list.name}"?`;
+  if (!confirm(msg)) return;
+  deleteList(list.id);
+  render();
+});
+
+/* Add todo on Enter or button click */
+function handleAddTodo() {
+  const text = addTodoInputEl.value.trim();
+  if (!text) return;
+  addTodoInputEl.value = '';
+
+  addTodoItem(text);
+  render();
+
+  // Scroll new item into view
+  requestAnimationFrame(() => {
+    const items = todosContainerEl.querySelectorAll('.todo-item:not(.done)');
+    const last  = items[items.length - 1];
+    if (last) last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+}
+
+addTodoInputEl.addEventListener('keydown', e => {
+  if (e.key === 'Enter') handleAddTodo();
+});
+
+document.getElementById('add-todo-btn').addEventListener('click', handleAddTodo);
+
+// ============================================================
+// INIT
+// ============================================================
+
+loadState();
+render();
+
+// Focus the add input if a list is already selected
+if (getCurrentList()) {
+  addTodoInputEl.focus();
 }

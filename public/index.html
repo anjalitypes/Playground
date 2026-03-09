@@ -3,175 +3,79 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AI Paper Detection Tool</title>
+  <title>Visual Todo Lists</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<!-- HEADER -->
-<header class="site-header">
-  <div class="header-inner">
-    <div class="header-brand">
-      <span class="header-icon">🎓</span>
-      <div>
-        <h1>AI Paper Detection Tool</h1>
-        <p>Compare a student's new paper against their reference writing</p>
-      </div>
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <div class="app-brand">
+      <span class="brand-icon">✅</span>
+      <span class="brand-name">Visual Lists</span>
     </div>
-    <div class="header-badge">Powered by Claude</div>
-  </div>
-</header>
-
-<!-- MAIN -->
-<main>
-
-  <!-- UPLOAD PANEL -->
-  <section id="upload-section" class="upload-section">
-    <div class="upload-grid">
-
-      <div class="upload-card" id="new-paper-card">
-        <div class="upload-card-header">
-          <span class="upload-icon">📄</span>
-          <div>
-            <h2>New Paper</h2>
-            <p>The paper to be analyzed</p>
-          </div>
-        </div>
-        <label class="drop-zone" id="new-paper-zone">
-          <input type="file" id="new-paper-input" accept=".txt,.pdf" hidden />
-          <div class="drop-zone-content" id="new-paper-placeholder">
-            <div class="drop-icon">📁</div>
-            <p class="drop-label">Drop file here or <span class="link">click to browse</span></p>
-            <p class="drop-hint">Supports .txt and .pdf</p>
-          </div>
-          <div class="file-selected" id="new-paper-selected" hidden>
-            <span class="file-icon">📄</span>
-            <span class="file-name" id="new-paper-name"></span>
-            <button class="remove-btn" id="new-paper-remove" type="button">✕</button>
-          </div>
-        </label>
-      </div>
-
-      <div class="upload-divider">
-        <div class="vs-badge">VS</div>
-      </div>
-
-      <div class="upload-card" id="ref-paper-card">
-        <div class="upload-card-header">
-          <span class="upload-icon">📋</span>
-          <div>
-            <h2>Reference Paper</h2>
-            <p>A paper you know the student wrote</p>
-          </div>
-        </div>
-        <label class="drop-zone" id="ref-paper-zone">
-          <input type="file" id="ref-paper-input" accept=".txt,.pdf" hidden />
-          <div class="drop-zone-content" id="ref-paper-placeholder">
-            <div class="drop-icon">📁</div>
-            <p class="drop-label">Drop file here or <span class="link">click to browse</span></p>
-            <p class="drop-hint">Supports .txt and .pdf</p>
-          </div>
-          <div class="file-selected" id="ref-paper-selected" hidden>
-            <span class="file-icon">📋</span>
-            <span class="file-name" id="ref-paper-name"></span>
-            <button class="remove-btn" id="ref-paper-remove" type="button">✕</button>
-          </div>
-        </label>
-      </div>
-
-    </div>
-
-    <div class="analyze-row">
-      <button id="analyze-btn" class="analyze-btn" disabled>
-        <span class="btn-icon">🔍</span>
-        <span id="analyze-btn-text">Analyze Papers</span>
-      </button>
-    </div>
-  </section>
-
-  <!-- STATUS BAR -->
-  <div id="status-bar" class="status-bar hidden">
-    <div class="status-spinner"></div>
-    <span id="status-text">Analyzing...</span>
   </div>
 
-  <!-- RESULTS -->
-  <section id="results-section" class="results-section hidden">
+  <div class="sidebar-lists" id="sidebar-lists">
+    <!-- List items rendered here -->
+  </div>
 
-    <!-- Score Cards -->
-    <div class="score-grid" id="score-grid">
-      <div class="score-card score-card--verdict">
-        <div class="score-label">Verdict</div>
-        <div class="score-value" id="verdict-value">—</div>
+  <div class="sidebar-footer">
+    <button class="new-list-btn" id="new-list-btn">
+      <span class="new-list-plus">+</span> New List
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN CONTENT -->
+<main class="main">
+
+  <!-- Empty state -->
+  <div class="main-empty" id="main-empty">
+    <div class="empty-icon">📋</div>
+    <h2 class="empty-title">No list selected</h2>
+    <p class="empty-sub">Create a new list to get started</p>
+    <button class="create-first-btn" id="create-first-btn">Create your first list</button>
+  </div>
+
+  <!-- List view -->
+  <div class="list-view" id="list-view" hidden>
+
+    <div class="list-header">
+      <div class="list-header-left">
+        <input class="list-title-input" id="list-title-input" type="text" placeholder="List name..." spellcheck="false" />
+        <div class="list-meta" id="list-meta"></div>
       </div>
-      <div class="score-card score-card--match">
-        <div class="score-label">Style Match</div>
-        <div class="score-value" id="match-value">—</div>
-        <div class="score-bar"><div class="score-fill score-fill--match" id="match-bar"></div></div>
-      </div>
-      <div class="score-card score-card--ai">
-        <div class="score-label">AI Probability</div>
-        <div class="score-value" id="ai-value">—</div>
-        <div class="score-bar"><div class="score-fill score-fill--ai" id="ai-bar"></div></div>
-      </div>
-      <div class="score-card score-card--flags">
-        <div class="score-label">Flagged Passages</div>
-        <div class="score-value" id="flags-value">—</div>
+      <button class="delete-list-btn" id="delete-list-btn" title="Delete this list">🗑 Delete List</button>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-bar-wrap" id="progress-bar-wrap">
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-bar-fill"></div>
       </div>
     </div>
 
-    <!-- Analysis Layout: Paper + Chat -->
-    <div class="analysis-layout">
-
-      <!-- Left: Annotated Paper -->
-      <div class="paper-panel">
-        <div class="panel-header">
-          <h3>📄 Annotated Paper</h3>
-          <div class="legend">
-            <span class="legend-chip legend-chip--high">High suspicion</span>
-            <span class="legend-chip legend-chip--medium">Medium suspicion</span>
-            <span class="legend-chip legend-chip--low">Low suspicion</span>
-          </div>
-        </div>
-        <div class="paper-scroll">
-          <div id="annotated-paper" class="annotated-paper"></div>
-        </div>
-
-        <!-- Annotation Detail Tooltip -->
-        <div id="annotation-tooltip" class="annotation-tooltip hidden">
-          <div class="tooltip-level" id="tooltip-level"></div>
-          <div class="tooltip-reason" id="tooltip-reason"></div>
-        </div>
-      </div>
-
-      <!-- Right: Chat Panel -->
-      <div class="chat-panel">
-        <div class="panel-header">
-          <h3>💬 Analysis & Chat</h3>
-          <button id="reset-btn" class="reset-btn" title="Start a new analysis">↺ New Analysis</button>
-        </div>
-
-        <div id="chat-messages" class="chat-messages">
-          <!-- Messages rendered here -->
-        </div>
-
-        <div class="chat-input-area">
-          <textarea
-            id="chat-input"
-            class="chat-input"
-            placeholder="Ask a follow-up question about the analysis..."
-            rows="2"
-            disabled
-          ></textarea>
-          <button id="chat-send" class="chat-send" disabled>
-            <span>Send</span>
-            <span class="send-icon">↑</span>
-          </button>
-        </div>
-      </div>
-
+    <!-- Todos -->
+    <div class="todos-container" id="todos-container">
+      <!-- Todo items rendered here -->
     </div>
-  </section>
+
+    <!-- Add todo input -->
+    <div class="add-todo-area">
+      <input
+        class="add-todo-input"
+        id="add-todo-input"
+        type="text"
+        placeholder="What do you need to do? Press Enter to add with image..."
+        autocomplete="off"
+        spellcheck="true"
+      />
+      <button class="add-todo-btn" id="add-todo-btn">Add</button>
+    </div>
+
+  </div>
 
 </main>
 
