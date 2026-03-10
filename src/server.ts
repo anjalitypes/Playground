@@ -313,6 +313,67 @@ app.get(['/tracker', '/tracker/*'], (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'tracker.html'));
 });
 
+// Todo + Paper Detection → SPA (served by index.html)
+app.get(['/todo', '/paper-detection'], (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+// ─── AI Paper Detection ───────────────────────────────────────────────────────
+
+app.post('/api/detect-ai', async (req: Request, res: Response): Promise<void> => {
+  const { reference, submission } = req.body;
+  if (!reference || !submission) {
+    res.status(400).json({ error: 'Both reference and submission text are required' });
+    return;
+  }
+
+  try {
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 1024,
+      messages: [{
+        role: 'user',
+        content: `You are an expert writing analyst helping educators detect potential AI-generated content by comparing a student's known reference writing against a new submission.
+
+REFERENCE WRITING (known to be the student's own work):
+"""
+${reference.slice(0, 4000)}
+"""
+
+NEW SUBMISSION (to evaluate):
+"""
+${submission.slice(0, 4000)}
+"""
+
+Analyze whether the new submission is consistent with the student's established writing style, or whether it shows signs of AI assistance. Consider: sentence complexity, vocabulary sophistication, writing quirks, transition patterns, tone, argumentation style, and structural habits.
+
+Respond ONLY with valid JSON in this exact format:
+{
+  "riskLevel": "low" | "medium" | "high",
+  "summary": "One sentence summary of the assessment",
+  "indicators": [
+    { "label": "Vocabulary Consistency", "score": 0-100 },
+    { "label": "Sentence Structure Match", "score": 0-100 },
+    { "label": "Tone & Voice Consistency", "score": 0-100 },
+    { "label": "Argumentation Style Match", "score": 0-100 }
+  ],
+  "findings": "2-3 sentences describing the key stylistic differences or similarities found",
+  "recommendation": "1-2 sentences on what action the educator should consider"
+}
+
+For the indicators, a score of 100 means perfect consistency with the reference (low AI risk), 0 means completely inconsistent (high AI risk).`,
+      }],
+    });
+
+    const textBlock = response.content.find(b => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') throw new Error('No response from Claude');
+    const cleaned = textBlock.text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    res.json(JSON.parse(cleaned));
+  } catch (err) {
+    res.status(500).json({ error: `Analysis failed: ${(err as Error).message}` });
+  }
+});
+
 // Catch-all → landing page
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));

@@ -8,139 +8,152 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --blue: #2563eb;
-      --blue-light: #eff6ff;
-      --gray-50: #f8fafc;
-      --gray-100: #f1f5f9;
-      --gray-200: #e2e8f0;
-      --gray-500: #64748b;
-      --gray-700: #334155;
-      --gray-900: #0f172a;
+      --blue: #3b82f6;
+      --blue-dim: #1e3a5f;
+      --bg: #0f1117;
+      --bg-card: #1a1d27;
+      --bg-input: #12141c;
+      --border: #2a2d3a;
+      --border-focus: #3b82f6;
+      --text: #e2e8f0;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
       --radius: 14px;
-      --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
-      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,.08), 0 4px 6px -2px rgba(0,0,0,.05);
+      --shadow: 0 1px 3px rgba(0,0,0,.4);
+      --shadow-lg: 0 10px 24px rgba(0,0,0,.5);
     }
 
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: var(--gray-50);
-      color: var(--gray-900);
+      background: var(--bg);
+      color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
     }
 
-    /* Header */
+    /* ── Header ─────────────────────────────────────────────────────────── */
     .site-header {
-      background: white;
-      border-bottom: 1px solid var(--gray-200);
+      background: #13151f;
+      border-bottom: 1px solid var(--border);
       box-shadow: var(--shadow);
+      position: sticky;
+      top: 0;
+      z-index: 10;
     }
     .header-inner {
-      max-width: 900px;
+      max-width: 960px;
       margin: 0 auto;
-      padding: 22px 20px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
-    .header-inner h1 {
-      font-size: 1.6rem;
+    .back-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      display: none;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.85rem;
+      padding: 5px 0;
+      transition: color .15s;
+    }
+    .back-btn:hover { color: var(--text); }
+    .back-btn.visible { display: flex; }
+    .header-wordmark {
+      font-size: 1.1rem;
       font-weight: 800;
-      color: var(--gray-900);
       letter-spacing: -.02em;
+      cursor: pointer;
+      color: var(--text);
     }
-    .header-inner p {
-      color: var(--gray-500);
-      font-size: 0.9rem;
-      margin-top: 4px;
+    .header-sub-title {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      display: none;
     }
+    .header-sub-title.visible { display: inline; }
 
-    /* Main */
-    main {
-      max-width: 900px;
+    /* ── Views ──────────────────────────────────────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Shared ─────────────────────────────────────────────────────────── */
+    .btn-sm {
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+      flex-shrink: 0;
+    }
+    .btn-sm:hover { background: #2563eb; }
+    .btn-sm:disabled { background: #2a2d3a; cursor: not-allowed; color: var(--text-muted); }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       HOME VIEW
+    ══════════════════════════════════════════════════════════════════════ */
+    #view-home main {
+      max-width: 960px;
       margin: 0 auto;
       padding: 40px 20px 80px;
     }
-
     .section-label {
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 700;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: var(--gray-500);
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
       margin-bottom: 20px;
     }
-
-    /* App grid */
     .app-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 20px;
+      gap: 18px;
     }
-
     .app-card {
-      background: white;
-      border: 1px solid var(--gray-200);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
       border-radius: var(--radius);
       box-shadow: var(--shadow);
       text-decoration: none;
       color: inherit;
       display: flex;
       flex-direction: column;
-      transition: box-shadow .18s, transform .18s;
+      transition: box-shadow .18s, transform .18s, border-color .18s;
       overflow: hidden;
+      cursor: pointer;
     }
     .app-card:hover {
       box-shadow: var(--shadow-lg);
       transform: translateY(-2px);
+      border-color: #3a3d4a;
     }
-
     .card-banner {
-      height: 80px;
+      height: 76px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.8rem;
+      font-size: 2.6rem;
     }
-
-    .card-body {
-      padding: 18px 20px 20px;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .card-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--gray-900);
-      margin-bottom: 6px;
-    }
-
-    .card-desc {
-      font-size: 0.83rem;
-      color: var(--gray-500);
-      line-height: 1.55;
-      flex: 1;
-    }
-
-    .card-tags {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-top: 14px;
-    }
-
-    .tag {
-      font-size: 0.7rem;
-      font-weight: 600;
-      border-radius: 20px;
-      padding: 2px 9px;
-      background: var(--gray-100);
-      color: var(--gray-700);
-    }
-    .tag-blue { background: #eff6ff; color: #2563eb; }
-
+    .banner-purple { background: #1e1b33; }
+    .banner-green  { background: #0d2318; }
+    .banner-indigo { background: #141a30; }
+    .card-body { padding: 16px 20px 18px; flex: 1; display: flex; flex-direction: column; }
+    .card-title { font-size: 0.95rem; font-weight: 700; color: var(--text); margin-bottom: 6px; }
+    .card-desc { font-size: 0.82rem; color: var(--text-muted); line-height: 1.6; flex: 1; }
+    .card-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 12px; }
+    .tag { font-size: 0.68rem; font-weight: 600; border-radius: 20px; padding: 2px 9px; background: #1e2130; color: var(--text-dim); }
+    .tag-blue { background: #1a2744; color: #60a5fa; }
     .card-footer {
-      padding: 12px 20px;
-      border-top: 1px solid var(--gray-100);
+      padding: 11px 20px;
+      border-top: 1px solid var(--border);
       font-size: 0.78rem;
       font-weight: 600;
       color: var(--blue);
@@ -148,81 +161,799 @@
       align-items: center;
       gap: 5px;
     }
-    .card-footer svg { flex-shrink: 0; }
 
-    /* Colors per card */
-    .banner-green  { background: #f0fdf4; }
-    .banner-indigo { background: #eef2ff; }
+    /* ══════════════════════════════════════════════════════════════════════
+       TODO VIEW
+    ══════════════════════════════════════════════════════════════════════ */
+    #view-todo main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 20px 80px;
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 640px) { #view-todo main { grid-template-columns: 1fr; } }
+
+    .sidebar {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .sidebar-title {
+      padding: 13px 16px 9px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .list-tabs { list-style: none; }
+    .list-tab {
+      padding: 11px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.87rem;
+      color: var(--text-dim);
+      transition: background .12s;
+    }
+    .list-tab:last-child { border-bottom: none; }
+    .list-tab:hover { background: #1e2130; }
+    .list-tab.active { background: var(--blue-dim); color: #93c5fd; font-weight: 600; }
+    .list-tab .tab-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .tab-count {
+      font-size: 0.7rem;
+      background: #1e2130;
+      color: var(--text-muted);
+      border-radius: 20px;
+      padding: 1px 7px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .list-tab.active .tab-count { background: #1a3060; color: #93c5fd; }
+    .tab-del {
+      opacity: 0;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      background: none;
+      border: none;
+      padding: 0 2px;
+      flex-shrink: 0;
+      line-height: 1;
+      transition: opacity .12s, color .12s;
+    }
+    .list-tab:hover .tab-del { opacity: 1; }
+    .tab-del:hover { color: #f87171; }
+    .new-list-form {
+      padding: 12px 14px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+    }
+    .new-list-form input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 0.82rem;
+      outline: none;
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    .new-list-form input:focus { border-color: var(--border-focus); }
+    .new-list-form input::placeholder { color: var(--text-muted); }
+
+    .list-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .list-panel-header {
+      padding: 16px 22px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .list-panel-title { font-size: 1.02rem; font-weight: 700; }
+    .list-panel-meta { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+    .add-item-form {
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 10px;
+    }
+    .add-item-form input {
+      flex: 1;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 14px;
+      font-size: 0.87rem;
+      outline: none;
+      color: var(--text);
+      transition: border-color .15s;
+    }
+    .add-item-form input:focus { border-color: var(--border-focus); }
+    .add-item-form input::placeholder { color: var(--text-muted); }
+    .items-list { list-style: none; }
+    .todo-item {
+      display: flex;
+      align-items: center;
+      padding: 11px 20px;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+      transition: background .12s;
+    }
+    .todo-item:last-child { border-bottom: none; }
+    .todo-item:hover { background: #1e2130; }
+    .todo-item.done { opacity: 0.4; }
+    .item-photo {
+      width: 46px; height: 46px;
+      border-radius: 9px;
+      object-fit: cover;
+      background: #1e2130;
+      flex-shrink: 0;
+      border: 1px solid var(--border);
+    }
+    .item-photo-ph {
+      width: 46px; height: 46px;
+      border-radius: 9px;
+      background: #1e2130;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      border: 1px solid var(--border);
+    }
+    .item-check {
+      width: 19px; height: 19px;
+      border-radius: 50%;
+      border: 2px solid #3a3d4a;
+      flex-shrink: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .15s, border-color .15s;
+    }
+    .item-check:hover { border-color: var(--blue); }
+    .todo-item.done .item-check { background: #22c55e; border-color: #22c55e; }
+    .item-check svg { display: none; }
+    .todo-item.done .item-check svg { display: block; }
+    .item-text { flex: 1; font-size: 0.88rem; font-weight: 500; color: var(--text); }
+    .todo-item.done .item-text { text-decoration: line-through; color: var(--text-muted); }
+    .item-del {
+      opacity: 0;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      border-radius: 6px;
+      line-height: 1;
+      transition: opacity .12s, color .12s;
+    }
+    .todo-item:hover .item-del { opacity: 1; }
+    .item-del:hover { color: #f87171; }
+    .panel-empty, .no-list-state {
+      padding: 52px 22px;
+      text-align: center;
+      color: var(--text-muted);
+    }
+    .panel-empty .icon, .no-list-state .icon { font-size: 2.2rem; margin-bottom: 8px; }
+    .panel-empty p, .no-list-state p { font-size: 0.85rem; }
+    .no-list-state h3 { font-size: 0.95rem; font-weight: 700; color: var(--text-dim); margin-bottom: 5px; }
+
+    /* ══════════════════════════════════════════════════════════════════════
+       PAPER DETECTION VIEW
+    ══════════════════════════════════════════════════════════════════════ */
+    #view-paper main {
+      max-width: 880px;
+      margin: 0 auto;
+      padding: 36px 20px 80px;
+    }
+    .paper-intro {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px 24px;
+      margin-bottom: 22px;
+    }
+    .paper-intro h2 { font-size: 1rem; font-weight: 700; margin-bottom: 6px; }
+    .paper-intro p { font-size: 0.84rem; color: var(--text-muted); line-height: 1.65; }
+    .paper-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+    @media (max-width: 640px) { .paper-grid { grid-template-columns: 1fr; } }
+    .paper-field {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .paper-field-header {
+      padding: 13px 18px 9px;
+      border-bottom: 1px solid var(--border);
+    }
+    .paper-field-header label {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--text);
+      display: block;
+    }
+    .paper-field-header span { font-size: 0.75rem; color: var(--text-muted); }
+    .paper-field textarea {
+      width: 100%;
+      height: 260px;
+      border: none;
+      outline: none;
+      padding: 14px 18px;
+      font-size: 0.84rem;
+      font-family: inherit;
+      resize: vertical;
+      color: var(--text);
+      background: var(--bg-card);
+      line-height: 1.65;
+    }
+    .paper-field textarea::placeholder { color: var(--text-muted); }
+    .paper-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+    .btn-primary {
+      background: var(--blue);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      padding: 10px 24px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-primary:hover { background: #2563eb; }
+    .btn-primary:disabled { background: #2a2d3a; color: var(--text-muted); cursor: not-allowed; }
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 9px 20px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    .btn-secondary:hover { background: #1e2130; }
+    .paper-status { font-size: 0.83rem; color: var(--text-muted); }
+
+    .paper-result {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .result-header {
+      padding: 16px 22px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .result-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 20px;
+      padding: 3px 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      flex-shrink: 0;
+    }
+    .badge-high { background: #2d1111; color: #f87171; border: 1px solid #7f1d1d; }
+    .badge-medium { background: #2d2411; color: #fbbf24; border: 1px solid #78350f; }
+    .badge-low { background: #0d2318; color: #4ade80; border: 1px solid #14532d; }
+    .result-title { font-size: 0.95rem; font-weight: 700; }
+    .result-body { padding: 20px 22px; }
+    .result-section { margin-bottom: 18px; }
+    .result-section:last-child { margin-bottom: 0; }
+    .result-section h4 {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .result-section p { font-size: 0.87rem; color: var(--text-dim); line-height: 1.7; }
+    .result-indicators { display: flex; flex-direction: column; gap: 9px; }
+    .indicator-row { display: flex; align-items: center; gap: 10px; }
+    .indicator-bar-wrap {
+      flex: 1;
+      height: 5px;
+      background: #1e2130;
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .indicator-bar { height: 100%; border-radius: 99px; background: var(--blue); transition: width .4s ease; }
+    .indicator-label { font-size: 0.79rem; color: var(--text-dim); width: 160px; flex-shrink: 0; }
+    .indicator-pct { font-size: 0.77rem; color: var(--text-muted); width: 34px; text-align: right; flex-shrink: 0; }
+    .paper-loading {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 32px 22px;
+      color: var(--text-muted);
+      font-size: 0.87rem;
+    }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid #2a2d3a;
+      border-top-color: var(--blue);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      flex-shrink: 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .paper-error {
+      padding: 18px 22px;
+      background: #1a0a0a;
+      border: 1px solid #7f1d1d;
+      border-radius: var(--radius);
+      color: #f87171;
+      font-size: 0.87rem;
+    }
   </style>
 </head>
 <body>
 
 <header class="site-header">
   <div class="header-inner">
-    <h1>Anjali's Playground</h1>
-    <p>A collection of AI-powered tools built with Claude</p>
+    <button class="back-btn" id="backBtn">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Home
+    </button>
+    <div>
+      <span class="header-wordmark" id="headerWordmark">Anjali's Playground</span>
+      <span class="header-sub-title" id="headerSubTitle"></span>
+    </div>
   </div>
 </header>
 
-<main>
-  <p class="section-label">Apps</p>
-  <div class="app-grid">
+<!-- ═══════════════════════ HOME VIEW ═══════════════════════ -->
+<div class="view active" id="view-home">
+  <main>
+    <p class="section-label">Apps</p>
+    <div class="app-grid">
 
-    <!-- Todo List -->
-    <a class="app-card" href="/todo">
-      <div class="card-banner" style="background:#f5f3ff;">✅</div>
-      <div class="card-body">
-        <div class="card-title">Visual Todo Lists</div>
-        <div class="card-desc">Todo lists that automatically fetch a photo for each item. Multiple lists, checkboxes, and local storage.</div>
-        <div class="card-tags">
-          <span class="tag">Lists</span>
-          <span class="tag">Images</span>
+      <div class="app-card" data-route="todo">
+        <div class="card-banner banner-purple">✅</div>
+        <div class="card-body">
+          <div class="card-title">Visual Todo Lists</div>
+          <div class="card-desc">Todo lists that automatically fetch a photo for each item. Multiple lists, checkboxes, and local storage.</div>
+          <div class="card-tags"><span class="tag">Lists</span><span class="tag">Images</span></div>
+        </div>
+        <div class="card-footer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Open app
         </div>
       </div>
-      <div class="card-footer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Open app
-      </div>
-    </a>
 
-    <!-- Prescription Tracker -->
-    <a class="app-card" href="/tracker">
-      <div class="card-banner banner-green">💊</div>
-      <div class="card-body">
-        <div class="card-title">Prescription Tracker</div>
-        <div class="card-desc">Upload medication labels and Claude extracts usage, warnings, and interactions into plain language. Check off what you're currently taking and get warned of drug interactions.</div>
-        <div class="card-tags">
-          <span class="tag tag-blue">Claude Vision</span>
-          <span class="tag">Interactions</span>
-          <span class="tag">Health</span>
+      <div class="app-card" data-route="tracker">
+        <div class="card-banner banner-green">💊</div>
+        <div class="card-body">
+          <div class="card-title">Prescription Tracker</div>
+          <div class="card-desc">Upload medication labels and Claude extracts usage, warnings, and interactions into plain language. Check off what you're currently taking and get warned of drug interactions.</div>
+          <div class="card-tags">
+            <span class="tag tag-blue">Claude Vision</span>
+            <span class="tag">Interactions</span>
+            <span class="tag">Health</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Open app
         </div>
       </div>
-      <div class="card-footer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Open app
-      </div>
-    </a>
 
-    <!-- AI Paper Detection -->
-    <a class="app-card" href="/paper-detection">
-      <div class="card-banner banner-indigo">🎓</div>
-      <div class="card-body">
-        <div class="card-title">AI Paper Detection Tool</div>
-        <div class="card-desc">Compare a student's new paper against their own reference writing to detect inconsistencies in style, vocabulary, and tone that may indicate AI assistance.</div>
-        <div class="card-tags">
-          <span class="tag tag-blue">Claude Analysis</span>
-          <span class="tag">Education</span>
-          <span class="tag">Writing</span>
+      <div class="app-card" data-route="paper-detection">
+        <div class="card-banner banner-indigo">🎓</div>
+        <div class="card-body">
+          <div class="card-title">AI Paper Detection Tool</div>
+          <div class="card-desc">Compare a student's new paper against their own reference writing to detect inconsistencies in style, vocabulary, and tone that may indicate AI assistance.</div>
+          <div class="card-tags">
+            <span class="tag tag-blue">Claude Analysis</span>
+            <span class="tag">Education</span>
+            <span class="tag">Writing</span>
+          </div>
+        </div>
+        <div class="card-footer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          Open app
         </div>
       </div>
-      <div class="card-footer">
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        Open app
+
+    </div>
+  </main>
+</div>
+
+<!-- ═══════════════════════ TODO VIEW ═══════════════════════ -->
+<div class="view" id="view-todo">
+  <main>
+    <aside class="sidebar">
+      <div class="sidebar-title">My Lists</div>
+      <ul class="list-tabs" id="listTabs"></ul>
+      <form class="new-list-form" id="newListForm">
+        <input type="text" id="newListInput" placeholder="New list…" maxlength="40" autocomplete="off" />
+        <button type="submit" class="btn-sm">+</button>
+      </form>
+    </aside>
+
+    <div class="list-panel" id="listPanel">
+      <div class="no-list-state">
+        <div class="icon">📋</div>
+        <h3>No list selected</h3>
+        <p>Create a list on the left to get started.</p>
       </div>
-    </a>
+    </div>
+  </main>
+</div>
 
-  </div>
-</main>
+<!-- ═══════════════════════ PAPER DETECTION VIEW ═══════════════════════ -->
+<div class="view" id="view-paper">
+  <main>
+    <div class="paper-intro">
+      <h2>AI Writing Detection</h2>
+      <p>Paste a student's reference writing (e.g., a previous essay) and the new submission to compare. Claude will analyze stylistic consistency and flag potential AI involvement.</p>
+    </div>
 
+    <div class="paper-grid">
+      <div class="paper-field">
+        <div class="paper-field-header">
+          <label for="refText">Reference Writing</label>
+          <span>Known sample of the student's own work</span>
+        </div>
+        <textarea id="refText" placeholder="Paste the student's reference writing here…"></textarea>
+      </div>
+      <div class="paper-field">
+        <div class="paper-field-header">
+          <label for="newText">New Submission</label>
+          <span>The paper you want to evaluate</span>
+        </div>
+        <textarea id="newText" placeholder="Paste the new paper here…"></textarea>
+      </div>
+    </div>
+
+    <div class="paper-actions">
+      <button class="btn-primary" id="analyzeBtn">Analyze Paper</button>
+      <button class="btn-secondary" id="clearBtn">Clear</button>
+      <span class="paper-status" id="paperStatus"></span>
+    </div>
+
+    <div id="paperResultArea"></div>
+  </main>
+</div>
+
+<script>
+  // ── Router ─────────────────────────────────────────────────────────────────
+  const ROUTES = { '': 'home', '/': 'home', '/todo': 'todo', '/paper-detection': 'paper' };
+  const TITLES = { home: "Anjali's Playground", todo: 'Visual Todo Lists', paper: 'AI Paper Detection' };
+  const SUBTITLES = { todo: '✅ Todo Lists', paper: '🎓 Paper Detection' };
+
+  function navigate(path, push = true) {
+    if (push) history.pushState({}, '', path);
+    const key = ROUTES[path] || 'home';
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById('view-' + key).classList.add('active');
+    document.title = TITLES[key] + (key !== 'home' ? " — Anjali's Playground" : '');
+    const backBtn = document.getElementById('backBtn');
+    const subTitle = document.getElementById('headerSubTitle');
+    if (key === 'home') {
+      backBtn.classList.remove('visible');
+      subTitle.classList.remove('visible');
+    } else {
+      backBtn.classList.add('visible');
+      subTitle.textContent = ' / ' + SUBTITLES[key];
+      subTitle.classList.add('visible');
+    }
+    if (key === 'todo') todoInit();
+  }
+
+  document.querySelectorAll('[data-route]').forEach(el => {
+    el.addEventListener('click', () => {
+      const r = el.dataset.route;
+      if (r === 'tracker') { window.location.href = '/tracker'; return; }
+      navigate('/' + r);
+    });
+  });
+  document.getElementById('backBtn').addEventListener('click', () => navigate('/'));
+  document.getElementById('headerWordmark').addEventListener('click', () => navigate('/'));
+  window.addEventListener('popstate', () => navigate(location.pathname, false));
+  navigate(location.pathname, false);
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  TODO APP
+  // ══════════════════════════════════════════════════════════════════════════
+  const TODO_KEY = 'visual-todos-v2';
+  const IMG_CACHE_KEY = 'visual-todos-imgcache-v1';
+  let todoState = null;
+  let imgCache = {};
+  try { imgCache = JSON.parse(localStorage.getItem(IMG_CACHE_KEY)) || {}; } catch {}
+
+  function todoLoad() {
+    try { return JSON.parse(localStorage.getItem(TODO_KEY)) || { lists: [], activeId: null }; }
+    catch { return { lists: [], activeId: null }; }
+  }
+  function todoSave() { localStorage.setItem(TODO_KEY, JSON.stringify(todoState)); }
+  function saveImgCache() { try { localStorage.setItem(IMG_CACHE_KEY, JSON.stringify(imgCache)); } catch {} }
+
+  function fetchImage(query) {
+    if (imgCache[query]) return Promise.resolve(imgCache[query]);
+    let hash = 0;
+    for (const c of query) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
+    const url = `https://picsum.photos/seed/${hash}/100/100`;
+    imgCache[query] = url;
+    saveImgCache();
+    return Promise.resolve(url);
+  }
+
+  function esc(str) {
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  let todoInitialized = false;
+  function todoInit() {
+    if (todoInitialized) { todoRender(); return; }
+    todoInitialized = true;
+    todoState = todoLoad();
+
+    document.getElementById('newListForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const inp = document.getElementById('newListInput');
+      const name = inp.value.trim();
+      if (!name) return;
+      inp.value = '';
+      const list = { id: 'list-' + Date.now(), name, items: [] };
+      todoState.lists.push(list);
+      todoState.activeId = list.id;
+      todoSave();
+      todoRender();
+    });
+
+    todoRender();
+  }
+
+  function todoRender() { todoRenderSidebar(); todoRenderPanel(); }
+
+  function todoRenderSidebar() {
+    const ul = document.getElementById('listTabs');
+    ul.innerHTML = '';
+    for (const list of todoState.lists) {
+      const done = list.items.filter(i => i.done).length;
+      const li = document.createElement('li');
+      li.className = 'list-tab' + (list.id === todoState.activeId ? ' active' : '');
+      li.innerHTML = `
+        <span class="tab-name">${esc(list.name)}</span>
+        <span class="tab-count">${done}/${list.items.length}</span>
+        <button class="tab-del" title="Delete">×</button>
+      `;
+      li.addEventListener('click', e => {
+        if (e.target.classList.contains('tab-del')) return;
+        todoState.activeId = list.id;
+        todoSave();
+        todoRender();
+      });
+      li.querySelector('.tab-del').addEventListener('click', e => {
+        e.stopPropagation();
+        if (!confirm(`Delete "${list.name}"?`)) return;
+        todoState.lists = todoState.lists.filter(l => l.id !== list.id);
+        if (todoState.activeId === list.id) todoState.activeId = todoState.lists[0]?.id || null;
+        todoSave();
+        todoRender();
+      });
+      ul.appendChild(li);
+    }
+  }
+
+  function todoRenderPanel() {
+    const panel = document.getElementById('listPanel');
+    const list = todoState.lists.find(l => l.id === todoState.activeId);
+    if (!list) {
+      panel.innerHTML = `<div class="no-list-state"><div class="icon">📋</div><h3>No list selected</h3><p>Create a list on the left to get started.</p></div>`;
+      return;
+    }
+    const done = list.items.filter(i => i.done).length;
+    panel.innerHTML = `
+      <div class="list-panel-header">
+        <div class="list-panel-title">${esc(list.name)}</div>
+        <div class="list-panel-meta" id="panelMeta">${done} of ${list.items.length} completed</div>
+      </div>
+      <form class="add-item-form" id="addItemForm">
+        <input type="text" id="addItemInput" placeholder="Add an item…" maxlength="100" autocomplete="off" />
+        <button type="submit" class="btn-sm">Add</button>
+      </form>
+      <ul class="items-list" id="itemsList"></ul>
+    `;
+
+    document.getElementById('addItemForm').addEventListener('submit', async e => {
+      e.preventDefault();
+      const inp = document.getElementById('addItemInput');
+      const text = inp.value.trim();
+      if (!text) return;
+      inp.value = '';
+      const item = { id: 'item-' + Date.now(), text, done: false, img: null };
+      list.items.push(item);
+      todoSave();
+      todoRenderPanel();
+      const url = await fetchImage(text);
+      item.img = url;
+      todoSave();
+      const el = document.querySelector(`[data-img="${item.id}"]`);
+      if (el && el.tagName !== 'IMG') {
+        const img = document.createElement('img');
+        img.className = 'item-photo';
+        img.dataset.img = item.id;
+        img.src = url;
+        img.alt = text;
+        img.loading = 'lazy';
+        el.replaceWith(img);
+      }
+    });
+
+    const ul = document.getElementById('itemsList');
+    if (list.items.length === 0) {
+      ul.innerHTML = `<div class="panel-empty"><div class="icon">🌟</div><p>Add your first item above!</p></div>`;
+      return;
+    }
+
+    for (const item of list.items) {
+      const li = document.createElement('li');
+      li.className = 'todo-item' + (item.done ? ' done' : '');
+      const photoHtml = item.img
+        ? `<img class="item-photo" data-img="${item.id}" src="${esc(item.img)}" alt="${esc(item.text)}" loading="lazy">`
+        : `<div class="item-photo-ph" data-img="${item.id}">🔍</div>`;
+      li.innerHTML = `
+        ${photoHtml}
+        <div class="item-check">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+        </div>
+        <span class="item-text">${esc(item.text)}</span>
+        <button class="item-del" title="Remove">×</button>
+      `;
+
+      if (!item.img) {
+        fetchImage(item.text).then(url => {
+          item.img = url;
+          todoSave();
+          const el = document.querySelector(`[data-img="${item.id}"]`);
+          if (el && el.tagName !== 'IMG') {
+            const img = document.createElement('img');
+            img.className = 'item-photo';
+            img.dataset.img = item.id;
+            img.src = url;
+            img.alt = item.text;
+            img.loading = 'lazy';
+            el.replaceWith(img);
+          }
+        });
+      }
+
+      li.querySelector('.item-check').addEventListener('click', () => {
+        item.done = !item.done;
+        todoSave();
+        li.classList.toggle('done', item.done);
+        todoRenderSidebar();
+        const meta = document.getElementById('panelMeta');
+        if (meta) {
+          const d = list.items.filter(i => i.done).length;
+          meta.textContent = `${d} of ${list.items.length} completed`;
+        }
+      });
+
+      li.querySelector('.item-del').addEventListener('click', () => {
+        list.items = list.items.filter(i => i.id !== item.id);
+        todoSave();
+        todoRender();
+      });
+
+      ul.appendChild(li);
+    }
+  }
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  PAPER DETECTION APP
+  // ══════════════════════════════════════════════════════════════════════════
+  document.getElementById('analyzeBtn').addEventListener('click', async () => {
+    const ref = document.getElementById('refText').value.trim();
+    const newP = document.getElementById('newText').value.trim();
+    const status = document.getElementById('paperStatus');
+    const resultArea = document.getElementById('paperResultArea');
+    const btn = document.getElementById('analyzeBtn');
+
+    if (!ref || !newP) { status.textContent = 'Please fill in both text fields.'; return; }
+    if (ref.split(/\s+/).length < 50 || newP.split(/\s+/).length < 50) {
+      status.textContent = 'Please provide at least ~50 words in each field.';
+      return;
+    }
+
+    btn.disabled = true;
+    status.textContent = '';
+    resultArea.innerHTML = `<div class="paper-result"><div class="paper-loading"><div class="spinner"></div>Analyzing writing patterns with Claude…</div></div>`;
+
+    try {
+      const resp = await fetch('/api/detect-ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reference: ref, submission: newP }),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Analysis failed');
+      renderPaperResult(data);
+    } catch (err) {
+      resultArea.innerHTML = `<div class="paper-error">Error: ${esc(err.message)}</div>`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  document.getElementById('clearBtn').addEventListener('click', () => {
+    document.getElementById('refText').value = '';
+    document.getElementById('newText').value = '';
+    document.getElementById('paperResultArea').innerHTML = '';
+    document.getElementById('paperStatus').textContent = '';
+  });
+
+  function renderPaperResult(data) {
+    const riskLevel = data.riskLevel || 'low';
+    const badgeClass = { high: 'badge-high', medium: 'badge-medium', low: 'badge-low' }[riskLevel] || 'badge-low';
+    const badgeLabel = { high: 'High Risk', medium: 'Medium Risk', low: 'Low Risk' }[riskLevel] || 'Low Risk';
+    const indicators = data.indicators || [];
+
+    document.getElementById('paperResultArea').innerHTML = `
+      <div class="paper-result">
+        <div class="result-header">
+          <span class="result-badge ${badgeClass}">${badgeLabel}</span>
+          <span class="result-title">${esc(data.summary || 'Analysis complete')}</span>
+        </div>
+        <div class="result-body">
+          ${indicators.length ? `
+            <div class="result-section">
+              <h4>Style Indicators</h4>
+              <div class="result-indicators">
+                ${indicators.map(ind => `
+                  <div class="indicator-row">
+                    <span class="indicator-label">${esc(ind.label)}</span>
+                    <div class="indicator-bar-wrap"><div class="indicator-bar" style="width:${ind.score}%"></div></div>
+                    <span class="indicator-pct">${ind.score}%</span>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : ''}
+          ${data.findings ? `<div class="result-section"><h4>Key Findings</h4><p>${esc(data.findings)}</p></div>` : ''}
+          ${data.recommendation ? `<div class="result-section"><h4>Recommendation</h4><p>${esc(data.recommendation)}</p></div>` : ''}
+        </div>
+      </div>
+    `;
+  }
+</script>
 </body>
 </html>
