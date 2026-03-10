@@ -289,9 +289,9 @@ app.get('/detector*', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'detector', 'index.html'));
 });
 
-// Landing page
+// Landing page — redirect to the todo app
 app.get('/', (_req, res) => {
-  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+  res.redirect('/todo');
 });
 
 const server = app.listen(PORT, () => {
