@@ -501,6 +501,44 @@
       flex-shrink: 0;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Completion celebration ─────────────────────────────────────────── */
+    .confetti-piece {
+      position: fixed;
+      width: 8px;
+      height: 8px;
+      border-radius: 2px;
+      pointer-events: none;
+      z-index: 9999;
+      animation: confetti-fall var(--dur, 1.2s) ease-in forwards;
+    }
+    @keyframes confetti-fall {
+      0%   { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+      80%  { opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) rotate(var(--rot)); opacity: 0; }
+    }
+    .completion-banner {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      background: rgba(15,17,23,0.82);
+      backdrop-filter: blur(4px);
+      border-radius: var(--radius);
+      z-index: 10;
+      animation: banner-in .35s cubic-bezier(.34,1.56,.64,1) forwards;
+      pointer-events: none;
+    }
+    @keyframes banner-in {
+      from { opacity: 0; transform: scale(.85); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+    .completion-banner .banner-icon { font-size: 2.6rem; }
+    .completion-banner .banner-text { font-size: 1.05rem; font-weight: 700; color: #e2e8f0; }
+    .completion-banner .banner-sub  { font-size: 0.8rem; color: var(--text-muted); }
     .paper-error {
       padding: 18px 22px;
       background: #1a0a0a;
@@ -762,6 +800,43 @@
     return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   }
 
+  function celebrateCompletion() {
+    const COLORS = ['#3b82f6','#22c55e','#f59e0b','#ec4899','#a78bfa','#38bdf8','#fb923c'];
+    const panel = document.getElementById('listPanel');
+    const rect = panel.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement('div');
+      el.className = 'confetti-piece';
+      const angle = (Math.random() * 360) * Math.PI / 180;
+      const dist = 120 + Math.random() * 220;
+      el.style.cssText = `
+        left:${cx - 4}px; top:${cy - 4}px;
+        background:${COLORS[i % COLORS.length]};
+        --dx:${(Math.cos(angle) * dist).toFixed(1)}px;
+        --dy:${(Math.sin(angle) * dist).toFixed(1)}px;
+        --rot:${Math.random() * 720 - 360}deg;
+        --dur:${(0.8 + Math.random() * 0.7).toFixed(2)}s;
+        border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
+      `;
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    }
+
+    const banner = document.createElement('div');
+    banner.className = 'completion-banner';
+    banner.innerHTML = `
+      <div class="banner-icon">🎉</div>
+      <div class="banner-text">All done!</div>
+      <div class="banner-sub">Great job completing every item.</div>
+    `;
+    panel.style.position = 'relative';
+    panel.appendChild(banner);
+    setTimeout(() => banner.remove(), 2800);
+  }
+
   let todoInitialized = false;
   function todoInit() {
     if (todoInitialized) { todoRender(); return; }
@@ -876,6 +951,9 @@
         if (meta) {
           const d = list.items.filter(i => i.done).length;
           meta.textContent = `${d} of ${list.items.length} completed`;
+        }
+        if (item.done && list.items.length > 0 && list.items.every(i => i.done)) {
+          celebrateCompletion();
         }
       });
 
