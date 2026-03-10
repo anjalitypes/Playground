@@ -652,4 +652,9 @@ document.getElementById('add-todo-btn').addEventListener('click', handleAddTodo)
 
 loadState();
 render();
-if (getCurrentList()) addTodoInputEl.focus();
+if (getCurrentList()) {
+  addTodoInputEl.focus();
+} else {
+  // No lists yet — drop straight into naming a new one
+  showNewListInput();
+}
