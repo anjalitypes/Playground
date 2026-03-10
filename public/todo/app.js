@@ -572,13 +572,43 @@ function syncTodoElement(el, item) {
 // EVENT HANDLERS
 // ============================================================
 
-document.getElementById('new-list-btn').addEventListener('click', () => {
-  createList(); render(); setTimeout(() => listTitleInput.select(), 30);
-});
+document.getElementById('new-list-btn').addEventListener('click', showNewListInput);
+document.getElementById('create-first-btn').addEventListener('click', showNewListInput);
 
-document.getElementById('create-first-btn').addEventListener('click', () => {
-  createList(); render(); setTimeout(() => listTitleInput.select(), 30);
-});
+function showNewListInput() {
+  // If an input is already open, just focus it
+  const existing = document.querySelector('.new-list-input-wrap');
+  if (existing) { existing.querySelector('input').focus(); return; }
+
+  const wrap = document.createElement('div');
+  wrap.className = 'new-list-input-wrap';
+  wrap.innerHTML = `
+    <input class="new-list-name-input" type="text" placeholder="List name…" maxlength="60" />
+  `;
+  sidebarListsEl.prepend(wrap);
+
+  const input = wrap.querySelector('input');
+  input.focus();
+
+  function confirm() {
+    const name = input.value.trim();
+    wrap.remove();
+    if (!name) return; // cancelled with no text
+    createList(name);
+    render();
+    setTimeout(() => addTodoInputEl.focus(), 30);
+  }
+
+  input.addEventListener('keydown', e => {
+    if (e.key === 'Enter')  confirm();
+    if (e.key === 'Escape') wrap.remove();
+  });
+
+  // On blur: confirm if they typed something, otherwise cancel
+  input.addEventListener('blur', () => {
+    if (input.value.trim()) confirm(); else wrap.remove();
+  });
+}
 
 listTitleInput.addEventListener('input', () => {
   const list = getCurrentList();
