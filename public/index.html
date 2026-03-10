@@ -296,24 +296,12 @@
     .todo-item:last-child { border-bottom: none; }
     .todo-item:hover { background: #1e2130; }
     .todo-item.done { opacity: 0.4; }
-    .item-photo {
-      width: 46px; height: 46px;
-      border-radius: 9px;
-      object-fit: cover;
-      background: #1e2130;
+    .item-emoji {
+      font-size: 1.4rem;
       flex-shrink: 0;
-      border: 1px solid var(--border);
-    }
-    .item-photo-ph {
-      width: 46px; height: 46px;
-      border-radius: 9px;
-      background: #1e2130;
-      flex-shrink: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-      border: 1px solid var(--border);
+      width: 28px;
+      text-align: center;
+      line-height: 1;
     }
     .item-check {
       width: 19px; height: 19px;
@@ -693,26 +681,81 @@
   //  TODO APP
   // ══════════════════════════════════════════════════════════════════════════
   const TODO_KEY = 'visual-todos-v2';
-  const IMG_CACHE_KEY = 'visual-todos-imgcache-v1';
   let todoState = null;
-  let imgCache = {};
-  try { imgCache = JSON.parse(localStorage.getItem(IMG_CACHE_KEY)) || {}; } catch {}
 
   function todoLoad() {
     try { return JSON.parse(localStorage.getItem(TODO_KEY)) || { lists: [], activeId: null }; }
     catch { return { lists: [], activeId: null }; }
   }
   function todoSave() { localStorage.setItem(TODO_KEY, JSON.stringify(todoState)); }
-  function saveImgCache() { try { localStorage.setItem(IMG_CACHE_KEY, JSON.stringify(imgCache)); } catch {} }
 
-  function fetchImage(query) {
-    if (imgCache[query]) return Promise.resolve(imgCache[query]);
+  function getEmoji(text) {
+    const t = text.toLowerCase();
+    const map = [
+      // Food & drink
+      [/milk|dairy/, '🥛'], [/coffee|espresso|latte|cappuccino/, '☕'], [/\btea\b/, '🍵'],
+      [/pizza/, '🍕'], [/bread|baguette|toast/, '🍞'], [/\begg/, '🥚'],
+      [/apple/, '🍎'], [/banana/, '🍌'], [/orange/, '🍊'], [/berry|berries|strawberry/, '🍓'],
+      [/grape/, '🍇'], [/mango/, '🥭'], [/avocado/, '🥑'], [/lemon|lime/, '🍋'],
+      [/\bwater\b/, '💧'], [/juice/, '🥤'], [/\bbeer\b/, '🍺'], [/\bwine\b/, '🍷'],
+      [/cake/, '🎂'], [/cookie|biscuit/, '🍪'], [/chocolate/, '🍫'],
+      [/salad|lettuce/, '🥗'], [/chicken|poultry/, '🍗'],
+      [/\brice\b/, '🍚'], [/pasta|spaghetti|noodle/, '🍝'], [/taco|burrito|wrap/, '🌮'],
+      [/burger|hamburger/, '🍔'], [/\bsoup\b|stew/, '🍲'], [/cheese/, '🧀'],
+      [/butter/, '🧈'], [/sugar|candy|sweet/, '🍬'], [/\bsalt\b/, '🧂'],
+      [/vegetable|veggie|broccoli/, '🥦'], [/carrot/, '🥕'], [/tomato/, '🍅'],
+      [/potato/, '🥔'], [/\bonion/, '🧅'], [/garlic/, '🧄'], [/\bcorn\b/, '🌽'],
+      [/mushroom/, '🍄'], [/pepper/, '🫑'], [/ice cream|icecream/, '🍦'],
+      [/\bmeat\b|beef|steak|pork/, '🥩'], [/sandwich|sub/, '🥪'], [/pancake|waffle/, '🧇'],
+      [/cereal|oatmeal|granola/, '🥣'], [/yogurt/, '🫙'], [/honey/, '🍯'],
+      // Animals & pets
+      [/\bdog\b|puppy/, '🐕'], [/\bcat\b|kitten|kitty/, '🐱'], [/\bbird\b|parrot/, '🐦'],
+      [/hamster|gerbil/, '🐹'], [/rabbit|bunny/, '🐰'], [/\bhorse\b/, '🐴'],
+      [/\bfish\b|aquarium/, '🐟'], [/turtle/, '🐢'], [/\bsnake\b/, '🐍'],
+      // Exercise & health
+      [/gym|workout|exercise|lift|weight/, '🏋️'], [/\brun\b|jog|sprint/, '🏃'],
+      [/\bwalk\b|hike/, '🚶'], [/swim|pool/, '🏊'], [/\bbike\b|cycle|cycling/, '🚴'],
+      [/yoga|meditat/, '🧘'], [/sleep|nap|rest/, '😴'],
+      [/doctor|physician|checkup/, '👨‍⚕️'], [/dentist|teeth/, '🦷'],
+      [/medicine|medication|pill|vitamin|supplement/, '💊'], [/hospital|clinic/, '🏥'],
+      // Home & chores
+      [/clean|tidy|dust/, '🧹'], [/laundry|clothes|shirt/, '🧺'],
+      [/dishes|dishwasher/, '🍽️'], [/vacuum/, '🧹'], [/\bmop\b|floor/, '🫧'],
+      [/cook|bake|recipe/, '👨‍🍳'], [/garden|plant|flower/, '🌱'],
+      [/\bmow\b|grass|lawn/, '🌿'], [/trash|garbage|recycle/, '🗑️'],
+      [/fix|repair|maintenance/, '🔧'], [/\bpaint\b|decor/, '🎨'],
+      // Shopping & errands
+      [/shop|grocery|groceries|supermarket/, '🛒'], [/\bbuy\b|purchase/, '🛍️'],
+      [/\bpay\b|bill|invoice|rent/, '💳'], [/bank|atm|cash|money|finance/, '🏦'],
+      [/mail|letter|package|post/, '📦'], [/return|refund/, '↩️'],
+      // Work & productivity
+      [/\bwork\b|job|office/, '💼'], [/meeting|zoom/, '👥'], [/\bemail\b|inbox/, '📧'],
+      [/report|document|file/, '📄'], [/present|presentation/, '📊'],
+      [/deadline|urgent/, '⏰'], [/plan|schedule|agenda/, '📅'],
+      // Learning & reading
+      [/\bread\b|book|novel|chapter/, '📚'], [/study|learn|class|school|homework/, '📖'],
+      [/research|look up/, '🔍'],
+      // Social & events
+      [/birthday|party|celebrat/, '🎉'], [/wedding/, '💒'],
+      [/\bgift\b|present/, '🎁'], [/vacation|holiday|trip|travel|flight/, '✈️'],
+      [/movie|film|cinema|watch/, '🎬'], [/music|concert|song/, '🎵'],
+      [/\bgame\b|gaming/, '🎮'],
+      // Transport
+      [/\bcar\b|drive|vehicle/, '🚗'], [/\bbus\b|transit/, '🚌'], [/train|subway/, '🚂'],
+      // Tech
+      [/\bphone\b|call|text/, '📱'], [/computer|laptop/, '💻'],
+      [/charger|battery/, '🔋'], [/internet|wifi/, '📶'],
+      // Misc
+      [/\bkey\b|lock/, '🔑'], [/password/, '🔐'], [/photo|picture|camera/, '📷'],
+      [/\bnote\b|remind|remember/, '📝'],
+    ];
+    for (const [pattern, emoji] of map) {
+      if (pattern.test(t)) return emoji;
+    }
+    const defaults = ['📌', '⭐', '🔹', '✨', '💫', '🔸', '🎯', '📍'];
     let hash = 0;
-    for (const c of query) hash = (hash * 31 + c.charCodeAt(0)) & 0xffff;
-    const url = `https://picsum.photos/seed/${hash}/100/100`;
-    imgCache[query] = url;
-    saveImgCache();
-    return Promise.resolve(url);
+    for (const c of text) hash = (hash * 31 + c.charCodeAt(0)) & 0xff;
+    return defaults[hash % defaults.length];
   }
 
   function esc(str) {
@@ -793,29 +836,16 @@
       <ul class="items-list" id="itemsList"></ul>
     `;
 
-    document.getElementById('addItemForm').addEventListener('submit', async e => {
+    document.getElementById('addItemForm').addEventListener('submit', e => {
       e.preventDefault();
       const inp = document.getElementById('addItemInput');
       const text = inp.value.trim();
       if (!text) return;
       inp.value = '';
-      const item = { id: 'item-' + Date.now(), text, done: false, img: null };
+      const item = { id: 'item-' + Date.now(), text, done: false };
       list.items.push(item);
       todoSave();
       todoRenderPanel();
-      const url = await fetchImage(text);
-      item.img = url;
-      todoSave();
-      const el = document.querySelector(`[data-img="${item.id}"]`);
-      if (el && el.tagName !== 'IMG') {
-        const img = document.createElement('img');
-        img.className = 'item-photo';
-        img.dataset.img = item.id;
-        img.src = url;
-        img.alt = text;
-        img.loading = 'lazy';
-        el.replaceWith(img);
-      }
     });
 
     const ul = document.getElementById('itemsList');
@@ -827,34 +857,14 @@
     for (const item of list.items) {
       const li = document.createElement('li');
       li.className = 'todo-item' + (item.done ? ' done' : '');
-      const photoHtml = item.img
-        ? `<img class="item-photo" data-img="${item.id}" src="${esc(item.img)}" alt="${esc(item.text)}" loading="lazy">`
-        : `<div class="item-photo-ph" data-img="${item.id}">🔍</div>`;
       li.innerHTML = `
-        ${photoHtml}
         <div class="item-check">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
+        <span class="item-emoji">${getEmoji(item.text)}</span>
         <span class="item-text">${esc(item.text)}</span>
         <button class="item-del" title="Remove">×</button>
       `;
-
-      if (!item.img) {
-        fetchImage(item.text).then(url => {
-          item.img = url;
-          todoSave();
-          const el = document.querySelector(`[data-img="${item.id}"]`);
-          if (el && el.tagName !== 'IMG') {
-            const img = document.createElement('img');
-            img.className = 'item-photo';
-            img.dataset.img = item.id;
-            img.src = url;
-            img.alt = item.text;
-            img.loading = 'lazy';
-            el.replaceWith(img);
-          }
-        });
-      }
 
       li.querySelector('.item-check').addEventListener('click', () => {
         item.done = !item.done;
