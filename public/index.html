@@ -861,10 +861,11 @@
         <div class="item-check">
           <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <span class="item-emoji">${getEmoji(item.text)}</span>
+        <span class="item-emoji"></span>
         <span class="item-text">${esc(item.text)}</span>
         <button class="item-del" title="Remove">×</button>
       `;
+      li.querySelector('.item-emoji').textContent = getEmoji(item.text);
 
       li.querySelector('.item-check').addEventListener('click', () => {
         item.done = !item.done;
