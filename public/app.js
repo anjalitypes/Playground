@@ -1,645 +1,463 @@
 /* ============================================================
-   AI Paper Detection Tool — Frontend
+   Prescription Tracker — Frontend
    ============================================================ */
 
-// State
-let newPaperFile = null;
-let refPaperFile = null;
-let analysisState = null; // { newPaperText, referencePaperText, annotations }
-let chatHistory = [];
-let isChatStreaming = false;
+// ─── State ───────────────────────────────────────────────────
+let medications = [];
+let settings = { userAge: null };
+let editingId = null;          // medication id being edited (null = new)
+let pendingToggleId = null;    // id waiting for interaction confirmation
+let currentImageFile = null;   // File object for new uploads
+let existingImageFile = null;  // filename string already saved on server
+let ageDismissed = false;
 
-// Elements
-const newPaperInput = document.getElementById('new-paper-input');
-const refPaperInput = document.getElementById('ref-paper-input');
-const newPaperZone = document.getElementById('new-paper-zone');
-const refPaperZone = document.getElementById('ref-paper-zone');
-const newPaperSelected = document.getElementById('new-paper-selected');
-const refPaperSelected = document.getElementById('ref-paper-selected');
-const newPaperPlaceholder = document.getElementById('new-paper-placeholder');
-const refPaperPlaceholder = document.getElementById('ref-paper-placeholder');
-const newPaperName = document.getElementById('new-paper-name');
-const refPaperName = document.getElementById('ref-paper-name');
-const newPaperRemove = document.getElementById('new-paper-remove');
-const refPaperRemove = document.getElementById('ref-paper-remove');
-const analyzeBtn = document.getElementById('analyze-btn');
-const analyzeBtnText = document.getElementById('analyze-btn-text');
-const statusBar = document.getElementById('status-bar');
-const statusText = document.getElementById('status-text');
-const resultsSection = document.getElementById('results-section');
-const annotatedPaper = document.getElementById('annotated-paper');
-const chatMessages = document.getElementById('chat-messages');
-const chatInput = document.getElementById('chat-input');
-const chatSend = document.getElementById('chat-send');
-const resetBtn = document.getElementById('reset-btn');
-const annotationTooltip = document.getElementById('annotation-tooltip');
-const tooltipLevel = document.getElementById('tooltip-level');
-const tooltipReason = document.getElementById('tooltip-reason');
-const verdictValue = document.getElementById('verdict-value');
-const matchValue = document.getElementById('match-value');
-const matchBar = document.getElementById('match-bar');
-const aiValue = document.getElementById('ai-value');
-const aiBar = document.getElementById('ai-bar');
-const flagsValue = document.getElementById('flags-value');
-
-// ============================================================
-// FILE UPLOAD HANDLING
-// ============================================================
-
-function setupFileInput(input, zone, placeholder, selected, nameEl, removeBtn, setter) {
-  // Click to upload
-  zone.addEventListener('click', (e) => {
-    if (e.target === removeBtn) return;
-    input.click();
-  });
-
-  input.addEventListener('change', () => {
-    if (input.files[0]) setFile(input.files[0]);
-  });
-
-  // Drag and drop
-  zone.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    zone.classList.add('dragover');
-  });
-
-  zone.addEventListener('dragleave', () => {
-    zone.classList.remove('dragover');
-  });
-
-  zone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    zone.classList.remove('dragover');
-    const file = e.dataTransfer.files[0];
-    if (file) setFile(file);
-  });
-
-  // Remove button
-  removeBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setter(null);
-    input.value = '';
-    placeholder.hidden = false;
-    selected.hidden = true;
-    updateAnalyzeBtn();
-  });
-
-  function setFile(file) {
-    const ext = file.name.split('.').pop().toLowerCase();
-    if (!['txt', 'pdf'].includes(ext)) {
-      showError('Only .txt and .pdf files are supported.');
-      return;
-    }
-    setter(file);
-    nameEl.textContent = file.name;
-    placeholder.hidden = true;
-    selected.hidden = false;
-    updateAnalyzeBtn();
-  }
+// ─── Init ─────────────────────────────────────────────────────
+async function init() {
+  await Promise.all([loadSettings(), loadMedications()]);
+  bindEvents();
 }
 
-setupFileInput(
-  newPaperInput, newPaperZone, newPaperPlaceholder, newPaperSelected,
-  newPaperName, newPaperRemove, (f) => { newPaperFile = f; }
-);
-
-setupFileInput(
-  refPaperInput, refPaperZone, refPaperPlaceholder, refPaperSelected,
-  refPaperName, refPaperRemove, (f) => { refPaperFile = f; }
-);
-
-function updateAnalyzeBtn() {
-  analyzeBtn.disabled = !(newPaperFile && refPaperFile);
+// ─── API helpers ──────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = { method, headers: {} };
+  if (body instanceof FormData) {
+    opts.body = body;
+  } else if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(path, opts);
+  return res.json();
 }
 
-// ============================================================
-// ANALYZE
-// ============================================================
-
-analyzeBtn.addEventListener('click', startAnalysis);
-
-async function startAnalysis() {
-  if (!newPaperFile || !refPaperFile) return;
-
-  // Reset results
-  analysisState = null;
-  chatHistory = [];
-  renderChatMessages();
-  annotatedPaper.innerHTML = '';
-
-  // Update UI state
-  analyzeBtn.disabled = true;
-  analyzeBtn.classList.add('loading');
-  analyzeBtnText.textContent = 'Analyzing...';
-  statusBar.classList.remove('hidden');
-  setStatus('Uploading papers...');
-  resultsSection.classList.add('hidden');
-
-  const formData = new FormData();
-  formData.append('newPaper', newPaperFile);
-  formData.append('referencePaper', refPaperFile);
-
-  try {
-    const response = await fetch('/api/analyze', {
-      method: 'POST',
-      body: formData,
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Upload failed');
-    }
-
-    resultsSection.classList.remove('hidden');
-    await processSSEStream(response.body);
-
-  } catch (err) {
-    showError(err.message);
-  } finally {
-    analyzeBtn.disabled = false;
-    analyzeBtn.classList.remove('loading');
-    analyzeBtnText.textContent = 'Analyze Papers';
-    statusBar.classList.add('hidden');
-  }
+// ─── Data loaders ─────────────────────────────────────────────
+async function loadSettings() {
+  settings = await api('GET', '/api/settings');
+  updateAgeDosageTag();
 }
 
-async function processSSEStream(body) {
-  const reader = body.getReader();
-  const decoder = new TextDecoder();
-  let buffer = '';
-  let currentAssistantEl = null;
-  let currentAssistantText = '';
-
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-
-    buffer += decoder.decode(value, { stream: true });
-    const lines = buffer.split('\n');
-    buffer = lines.pop(); // Keep incomplete line
-
-    for (const line of lines) {
-      if (line.startsWith('event: ')) {
-        // Handled below with data
-        continue;
-      }
-      if (!line.startsWith('data: ')) continue;
-
-      const dataStr = line.slice(6).trim();
-      if (!dataStr) continue;
-
-      let event = 'message';
-      // Scan back through lines to find the event type
-      const lineIdx = lines.indexOf(line);
-      for (let i = lineIdx - 1; i >= 0; i--) {
-        if (lines[i].startsWith('event: ')) {
-          event = lines[i].slice(7).trim();
-          break;
-        }
-      }
-
-      try {
-        const data = JSON.parse(dataStr);
-        handleSSEEvent(event, data, {
-          getCurrentAssistantEl: () => currentAssistantEl,
-          setCurrentAssistantEl: (el) => { currentAssistantEl = el; },
-          getCurrentAssistantText: () => currentAssistantText,
-          setCurrentAssistantText: (t) => { currentAssistantText = t; },
-        });
-      } catch { /* skip malformed */ }
-    }
-  }
-
-  // Finalize any streaming message
-  if (currentAssistantEl) {
-    finalizeStreamingMessage(currentAssistantEl, currentAssistantText);
-  }
+async function loadMedications() {
+  medications = await api('GET', '/api/medications');
+  renderList();
 }
 
-function handleSSEEvent(event, data, ctx) {
-  switch (event) {
-    case 'status':
-      setStatus(data.message);
-      break;
+// ─── Render ───────────────────────────────────────────────────
+function renderList() {
+  const activeMeds = medications.filter(m => m.active);
+  const inactiveMeds = medications.filter(m => !m.active);
 
-    case 'paper_text':
-      // Store paper text, render placeholder while waiting for annotations
-      if (!analysisState) analysisState = {};
-      analysisState.newPaperText = data.newPaperText;
-      annotatedPaper.textContent = 'Analyzing passages...';
-      annotatedPaper.style.color = 'var(--text-muted)';
-      break;
-
-    case 'annotations': {
-      if (!analysisState) analysisState = {};
-      analysisState.annotations = data;
-
-      // Update score cards
-      verdictValue.textContent = data.verdict || '—';
-      matchValue.textContent = `${data.match_rate ?? '—'}%`;
-      matchBar.style.width = `${data.match_rate ?? 0}%`;
-      aiValue.textContent = `${data.ai_probability ?? '—'}%`;
-      aiBar.style.width = `${data.ai_probability ?? 0}%`;
-      flagsValue.textContent = data.annotations?.length ?? '—';
-
-      // Color the verdict
-      const prob = data.ai_probability ?? 0;
-      if (prob >= 70) verdictValue.style.color = 'var(--red-high)';
-      else if (prob >= 40) verdictValue.style.color = 'var(--yellow)';
-      else verdictValue.style.color = 'var(--green)';
-
-      // Render annotated paper
-      if (analysisState.newPaperText) {
-        renderAnnotatedPaper(analysisState.newPaperText, data.annotations || []);
-      }
-
-      setStatus('Generating detailed analysis...');
-      break;
-    }
-
-    case 'chat_chunk': {
-      if (!ctx.getCurrentAssistantEl()) {
-        const el = appendChatMessage('assistant', '', true);
-        ctx.setCurrentAssistantEl(el);
-        ctx.setCurrentAssistantText('');
-      }
-      const newText = ctx.getCurrentAssistantText() + data.text;
-      ctx.setCurrentAssistantText(newText);
-      updateStreamingMessage(ctx.getCurrentAssistantEl(), newText);
-      break;
-    }
-
-    case 'chat_done': {
-      if (ctx.getCurrentAssistantEl()) {
-        finalizeStreamingMessage(ctx.getCurrentAssistantEl(), ctx.getCurrentAssistantText());
-        ctx.setCurrentAssistantEl(null);
-        ctx.setCurrentAssistantText('');
-      }
-
-      // Save context for follow-up chat
-      if (data.newPaperText) {
-        if (!analysisState) analysisState = {};
-        analysisState.newPaperText = data.newPaperText;
-        analysisState.referencePaperText = data.referencePaperText;
-      }
-
-      // Save the analysis message to history
-      const lastMsg = chatMessages.lastElementChild;
-      if (lastMsg) {
-        const bubble = lastMsg.querySelector('.msg-bubble');
-        if (bubble) {
-          chatHistory.push({ role: 'assistant', content: bubble.textContent });
-        }
-      }
-
-      // Enable chat
-      chatInput.disabled = false;
-      chatSend.disabled = false;
-      chatInput.focus();
-      break;
-    }
-
-    case 'error':
-      showError(data.message);
-      break;
+  // Age banner
+  const ageBanner = document.getElementById('age-banner');
+  if (!ageDismissed && settings.userAge === null) {
+    ageBanner.hidden = false;
+  } else {
+    ageBanner.hidden = true;
   }
+
+  // Active section
+  const activeSection = document.getElementById('active-section');
+  const divider = document.getElementById('section-divider');
+  activeSection.hidden = activeMeds.length === 0;
+  divider.hidden = activeMeds.length === 0;
+  document.getElementById('active-count').textContent = activeMeds.length;
+  document.getElementById('active-list').innerHTML = activeMeds.map(medCard).join('');
+
+  // All section (inactive)
+  document.getElementById('all-count').textContent = medications.length;
+  const allList = document.getElementById('all-list');
+  const emptyState = document.getElementById('empty-state');
+  if (medications.length === 0) {
+    allList.innerHTML = '';
+    allList.appendChild(emptyState);
+    emptyState.hidden = false;
+  } else {
+    emptyState.hidden = true;
+    allList.innerHTML = inactiveMeds.map(medCard).join('');
+  }
+
+  bindCardEvents();
 }
 
-// ============================================================
-// PAPER ANNOTATION RENDERING
-// ============================================================
+function medCard(med) {
+  const thumb = med.imageFile
+    ? `<img class="med-thumb" src="/images/${med.imageFile}" alt="${escHtml(med.name)}" />`
+    : `<div class="med-thumb-placeholder">💊</div>`;
 
-function renderAnnotatedPaper(text, annotations) {
-  annotatedPaper.style.color = '';
+  const meta = [med.dosage, med.frequency].filter(Boolean).join(' · ');
 
-  if (!annotations || annotations.length === 0) {
-    annotatedPaper.textContent = text;
+  return `
+  <div class="med-card ${med.active ? 'active' : ''}" data-id="${med.id}">
+    <div class="med-card-main">
+      <div class="med-checkbox-wrap">
+        <input type="checkbox" class="med-checkbox" data-id="${med.id}" ${med.active ? 'checked' : ''} title="${med.active ? 'Currently taking' : 'Mark as currently taking'}" />
+      </div>
+      ${thumb}
+      <div class="med-info">
+        <div class="med-name">${escHtml(med.name)}</div>
+        ${meta ? `<div class="med-meta">${escHtml(meta)}</div>` : ''}
+        ${med.active ? '<span class="med-active-badge">Currently Taking</span>' : ''}
+      </div>
+      <div class="med-actions">
+        <button class="med-btn med-view-btn" data-id="${med.id}">View</button>
+        <button class="med-btn med-edit-btn" data-id="${med.id}">Edit</button>
+        <button class="med-btn med-btn-danger med-delete-btn" data-id="${med.id}">Delete</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function bindCardEvents() {
+  document.querySelectorAll('.med-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => handleToggle(cb.dataset.id));
+  });
+  document.querySelectorAll('.med-view-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openViewModal(btn.dataset.id); });
+  });
+  document.querySelectorAll('.med-edit-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); openEditModal(btn.dataset.id); });
+  });
+  document.querySelectorAll('.med-delete-btn').forEach(btn => {
+    btn.addEventListener('click', e => { e.stopPropagation(); deleteMed(btn.dataset.id); });
+  });
+}
+
+// ─── Toggle (active/inactive) ──────────────────────────────────
+async function handleToggle(id) {
+  const result = await api('POST', `/api/medications/${id}/toggle`, {});
+  if (result.requiresConfirmation) {
+    pendingToggleId = id;
+    const med = medications.find(m => m.id === id);
+    document.getElementById('interaction-med-name').textContent =
+      `Starting: ${med ? med.name : 'this medication'}`;
+    document.getElementById('interaction-warning-text').textContent = result.warning;
+    document.getElementById('interaction-modal').hidden = false;
+    // Revert checkbox visually until confirmed
+    const cb = document.querySelector(`.med-checkbox[data-id="${id}"]`);
+    if (cb) cb.checked = !cb.checked;
+    return;
+  }
+  await loadMedications();
+}
+
+async function confirmInteraction() {
+  if (!pendingToggleId) return;
+  await api('POST', `/api/medications/${pendingToggleId}/toggle`, { confirmed: true });
+  pendingToggleId = null;
+  document.getElementById('interaction-modal').hidden = true;
+  await loadMedications();
+}
+
+// ─── Add / Edit modal ──────────────────────────────────────────
+function openAddModal() {
+  editingId = null;
+  currentImageFile = null;
+  existingImageFile = null;
+  resetModal();
+  document.getElementById('modal-title').textContent = 'Add Medication';
+  document.getElementById('med-modal').hidden = false;
+}
+
+function openEditModal(id) {
+  const med = medications.find(m => m.id === id);
+  if (!med) return;
+  editingId = id;
+  currentImageFile = null;
+  existingImageFile = med.imageFile || null;
+  resetModal();
+  document.getElementById('modal-title').textContent = 'Edit Medication';
+  document.getElementById('field-name').value = med.name || '';
+  document.getElementById('field-dosage').value = med.dosage || '';
+  document.getElementById('field-frequency').value = med.frequency || '';
+  document.getElementById('field-age-dosage').value = med.ageDosageNote || '';
+  document.getElementById('field-usage').value = med.usage || '';
+  document.getElementById('field-warnings').value = med.warnings || '';
+  document.getElementById('field-interactions').value = med.interactions || '';
+
+  // Show existing image
+  if (med.imageFile) {
+    showImagePreview(`/images/${med.imageFile}`);
+  }
+
+  document.getElementById('med-modal').hidden = false;
+}
+
+function resetModal() {
+  document.getElementById('image-input').value = '';
+  document.getElementById('field-name').value = '';
+  document.getElementById('field-dosage').value = '';
+  document.getElementById('field-frequency').value = '';
+  document.getElementById('field-age-dosage').value = '';
+  document.getElementById('field-usage').value = '';
+  document.getElementById('field-warnings').value = '';
+  document.getElementById('field-interactions').value = '';
+  document.getElementById('parse-error').hidden = true;
+  document.getElementById('parse-loading').hidden = true;
+  document.getElementById('upload-placeholder').hidden = false;
+  document.getElementById('upload-preview').hidden = true;
+  document.getElementById('preview-img').src = '';
+}
+
+function closeModal() {
+  document.getElementById('med-modal').hidden = true;
+}
+
+async function saveMed() {
+  const name = document.getElementById('field-name').value.trim();
+  if (!name) {
+    document.getElementById('field-name').focus();
     return;
   }
 
-  // Build sorted list of [start, end, annotation] ranges
-  const ranges = [];
+  const payload = {
+    name,
+    dosage: document.getElementById('field-dosage').value.trim(),
+    frequency: document.getElementById('field-frequency').value.trim(),
+    ageDosageNote: document.getElementById('field-age-dosage').value.trim(),
+    usage: document.getElementById('field-usage').value.trim(),
+    warnings: document.getElementById('field-warnings').value.trim(),
+    interactions: document.getElementById('field-interactions').value.trim(),
+    imageFile: existingImageFile || undefined,
+  };
 
-  for (const ann of annotations) {
-    if (!ann.flagged_text) continue;
-    const idx = text.indexOf(ann.flagged_text);
-    if (idx === -1) {
-      // Try case-insensitive search
-      const lowerText = text.toLowerCase();
-      const lowerFlagged = ann.flagged_text.toLowerCase();
-      const cidx = lowerText.indexOf(lowerFlagged);
-      if (cidx !== -1) {
-        ranges.push({ start: cidx, end: cidx + ann.flagged_text.length, ann });
-      }
-      continue;
-    }
-    ranges.push({ start: idx, end: idx + ann.flagged_text.length, ann });
-  }
-
-  // Sort by start position, handle overlaps by keeping longer/earlier range
-  ranges.sort((a, b) => a.start - b.start || b.end - a.end);
-
-  // Remove overlapping ranges
-  const merged = [];
-  for (const r of ranges) {
-    if (merged.length === 0 || r.start >= merged[merged.length - 1].end) {
-      merged.push(r);
-    }
-  }
-
-  // Build HTML
-  const fragment = document.createDocumentFragment();
-  let cursor = 0;
-
-  for (const { start, end, ann } of merged) {
-    // Text before
-    if (start > cursor) {
-      fragment.appendChild(document.createTextNode(text.slice(cursor, start)));
-    }
-
-    // Flagged span
-    const span = document.createElement('span');
-    span.className = `flagged flagged--${ann.suspicion_level || 'medium'}`;
-    span.textContent = text.slice(start, end);
-    span.dataset.reason = ann.reason;
-    span.dataset.level = ann.suspicion_level || 'medium';
-
-    span.addEventListener('mouseenter', (e) => showTooltip(e, ann));
-    span.addEventListener('mousemove', positionTooltip);
-    span.addEventListener('mouseleave', hideTooltip);
-    span.addEventListener('click', () => {
-      // Scroll to annotation in paper
-      span.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-
-    fragment.appendChild(span);
-    cursor = end;
-  }
-
-  // Remaining text
-  if (cursor < text.length) {
-    fragment.appendChild(document.createTextNode(text.slice(cursor)));
-  }
-
-  annotatedPaper.innerHTML = '';
-  annotatedPaper.appendChild(fragment);
-}
-
-// ============================================================
-// TOOLTIP
-// ============================================================
-
-function showTooltip(e, ann) {
-  tooltipLevel.textContent = `${ann.suspicion_level?.toUpperCase() || 'MEDIUM'} SUSPICION`;
-  tooltipLevel.className = `tooltip-level ${ann.suspicion_level || 'medium'}`;
-  tooltipReason.textContent = ann.reason;
-  annotationTooltip.classList.remove('hidden');
-  positionTooltip(e);
-}
-
-function positionTooltip(e) {
-  const tooltip = annotationTooltip;
-  const tw = tooltip.offsetWidth || 280;
-  const th = tooltip.offsetHeight || 80;
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
-
-  let left = e.clientX + 16;
-  let top = e.clientY + 16;
-
-  if (left + tw > vw - 16) left = e.clientX - tw - 16;
-  if (top + th > vh - 16) top = e.clientY - th - 16;
-
-  tooltip.style.left = `${left}px`;
-  tooltip.style.top = `${top}px`;
-}
-
-function hideTooltip() {
-  annotationTooltip.classList.add('hidden');
-}
-
-// ============================================================
-// CHAT
-// ============================================================
-
-chatSend.addEventListener('click', sendChatMessage);
-chatInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    sendChatMessage();
-  }
-});
-
-async function sendChatMessage() {
-  const message = chatInput.value.trim();
-  if (!message || isChatStreaming || !analysisState) return;
-
-  isChatStreaming = true;
-  chatInput.disabled = true;
-  chatSend.disabled = true;
-  chatInput.value = '';
-
-  // Add user message to UI and history
-  appendChatMessage('user', message);
-  chatHistory.push({ role: 'user', content: message });
-
-  let assistantEl = null;
-  let assistantText = '';
+  const saveBtn = document.getElementById('modal-save-btn');
+  saveBtn.disabled = true;
+  saveBtn.textContent = 'Saving...';
 
   try {
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message,
-        history: chatHistory.slice(-10), // Keep last 10 turns
-        newPaperText: analysisState.newPaperText,
-        referencePaperText: analysisState.referencePaperText,
-        annotations: analysisState.annotations,
-      }),
-    });
-
-    if (!response.ok) {
-      const err = await response.json();
-      throw new Error(err.error || 'Chat request failed');
+    if (editingId) {
+      await api('PUT', `/api/medications/${editingId}`, payload);
+    } else {
+      await api('POST', '/api/medications', payload);
     }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let lastEvent = 'message';
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (line.startsWith('event: ')) {
-          lastEvent = line.slice(7).trim();
-          continue;
-        }
-        if (!line.startsWith('data: ')) continue;
-
-        const dataStr = line.slice(6).trim();
-        if (!dataStr) continue;
-
-        try {
-          const data = JSON.parse(dataStr);
-
-          if (lastEvent === 'chat_chunk') {
-            if (!assistantEl) {
-              assistantEl = appendChatMessage('assistant', '', true);
-            }
-            assistantText += data.text;
-            updateStreamingMessage(assistantEl, assistantText);
-          } else if (lastEvent === 'chat_done') {
-            if (assistantEl) {
-              finalizeStreamingMessage(assistantEl, assistantText);
-              chatHistory.push({ role: 'assistant', content: assistantText });
-            }
-          } else if (lastEvent === 'error') {
-            showError(data.message);
-          }
-        } catch { /* skip */ }
-      }
-    }
-
-  } catch (err) {
-    showError(err.message);
+    closeModal();
+    await loadMedications();
   } finally {
-    isChatStreaming = false;
-    chatInput.disabled = false;
-    chatSend.disabled = false;
-    chatInput.focus();
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'Save Medication';
   }
 }
 
-// ============================================================
-// CHAT UI HELPERS
-// ============================================================
+// ─── Delete ───────────────────────────────────────────────────
+async function deleteMed(id) {
+  const med = medications.find(m => m.id === id);
+  if (!confirm(`Delete ${med ? med.name : 'this medication'}?`)) return;
+  await api('DELETE', `/api/medications/${id}`);
+  await loadMedications();
+}
 
-function appendChatMessage(role, text, streaming = false) {
-  const wrapper = document.createElement('div');
-  wrapper.className = `chat-msg chat-msg--${role}`;
+// ─── Image upload & parse ─────────────────────────────────────
+function showImagePreview(src) {
+  document.getElementById('upload-placeholder').hidden = true;
+  document.getElementById('parse-loading').hidden = true;
+  document.getElementById('upload-preview').hidden = false;
+  document.getElementById('preview-img').src = src;
+}
 
-  const label = document.createElement('div');
-  label.className = 'msg-label';
-  label.textContent = role === 'user' ? 'You' : 'AI Analyst';
+async function parseImage(file) {
+  document.getElementById('upload-placeholder').hidden = true;
+  document.getElementById('upload-preview').hidden = true;
+  document.getElementById('parse-loading').hidden = false;
+  document.getElementById('parse-error').hidden = true;
 
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
+  const formData = new FormData();
+  formData.append('image', file);
 
-  if (streaming) {
-    bubble.innerHTML = '<span class="typing-cursor"></span>';
+  const result = await api('POST', '/api/parse-image', formData);
+
+  document.getElementById('parse-loading').hidden = true;
+
+  if (result.error) {
+    document.getElementById('parse-error').textContent = result.error;
+    document.getElementById('parse-error').hidden = false;
   } else {
-    bubble.textContent = text;
+    // Populate fields with extracted data (only if currently empty)
+    const fillIfEmpty = (id, val) => {
+      const el = document.getElementById(id);
+      if (!el.value.trim() && val) el.value = val;
+    };
+    // Always fill from parse (user can edit after)
+    if (result.name) document.getElementById('field-name').value = result.name;
+    fillIfEmpty('field-dosage', result.dosage);
+    fillIfEmpty('field-frequency', result.frequency);
+    document.getElementById('field-age-dosage').value = result.ageDosageNote || '';
+    document.getElementById('field-usage').value = result.usage || '';
+    document.getElementById('field-warnings').value = result.warnings || '';
+    document.getElementById('field-interactions').value = result.interactions || '';
   }
 
-  wrapper.appendChild(label);
-  wrapper.appendChild(bubble);
-  chatMessages.appendChild(wrapper);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Save the server-side filename for reference
+  if (result.imageFile) existingImageFile = result.imageFile;
 
-  return wrapper;
+  // Show preview (use object URL for new file)
+  showImagePreview(URL.createObjectURL(file));
 }
 
-function updateStreamingMessage(el, text) {
-  const bubble = el.querySelector('.msg-bubble');
-  if (!bubble) return;
-  bubble.innerHTML = escapeHtml(text) + '<span class="typing-cursor"></span>';
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+// ─── View modal ───────────────────────────────────────────────
+function openViewModal(id) {
+  const med = medications.find(m => m.id === id);
+  if (!med) return;
+
+  document.getElementById('view-med-name').textContent = med.name;
+  document.getElementById('view-dosage').textContent =
+    [med.dosage, med.frequency].filter(Boolean).join(' · ');
+
+  // Image column
+  const imgCol = document.getElementById('view-image-col');
+  if (med.imageFile) {
+    document.getElementById('view-image').src = `/images/${med.imageFile}`;
+    imgCol.hidden = false;
+  } else {
+    imgCol.hidden = true;
+  }
+
+  // Info sections
+  const show = (sectionId, paragraphId, text) => {
+    const section = document.getElementById(sectionId);
+    const para = document.getElementById(paragraphId);
+    if (text) {
+      para.textContent = text;
+      section.hidden = false;
+    } else {
+      section.hidden = true;
+    }
+  };
+
+  show('vs-age-dosage', 'view-age-dosage', med.ageDosageNote);
+  show('vs-usage', 'view-usage', med.usage);
+  show('vs-warnings', 'view-warnings', med.warnings);
+  show('vs-interactions', 'view-interactions', med.interactions);
+
+  const hasAnyInfo = med.ageDosageNote || med.usage || med.warnings || med.interactions;
+  document.getElementById('view-empty').hidden = !!hasAnyInfo;
+
+  // Store id for edit button
+  document.getElementById('view-edit-btn').dataset.id = id;
+  document.getElementById('view-modal').hidden = false;
 }
 
-function finalizeStreamingMessage(el, text) {
-  const bubble = el.querySelector('.msg-bubble');
-  if (!bubble) return;
-  bubble.textContent = text;
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+// ─── Settings modal ───────────────────────────────────────────
+function openSettingsModal() {
+  document.getElementById('settings-age').value = settings.userAge !== null ? settings.userAge : '';
+  document.getElementById('settings-modal').hidden = false;
 }
 
-function renderChatMessages() {
-  chatMessages.innerHTML = '';
+async function saveSettings() {
+  const ageVal = document.getElementById('settings-age').value.trim();
+  const userAge = ageVal === '' ? null : parseInt(ageVal, 10);
+  settings = await api('PUT', '/api/settings', { userAge });
+  updateAgeDosageTag();
+  document.getElementById('settings-modal').hidden = true;
+  renderList(); // update banner
 }
 
-function escapeHtml(text) {
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;')
-    .replace(/\n/g, '<br>');
+function updateAgeDosageTag() {
+  const tag = document.getElementById('age-dosage-tag');
+  if (tag) {
+    tag.textContent = settings.userAge !== null ? `Age ${settings.userAge}` : '';
+  }
 }
 
-// ============================================================
-// RESET
-// ============================================================
-
-resetBtn.addEventListener('click', () => {
-  analysisState = null;
-  chatHistory = [];
-  newPaperFile = null;
-  refPaperFile = null;
-
-  // Reset file inputs
-  newPaperInput.value = '';
-  refPaperInput.value = '';
-  newPaperPlaceholder.hidden = false;
-  newPaperSelected.hidden = true;
-  refPaperPlaceholder.hidden = false;
-  refPaperSelected.hidden = true;
-
-  // Reset UI
-  resultsSection.classList.add('hidden');
-  statusBar.classList.add('hidden');
-  renderChatMessages();
-  annotatedPaper.innerHTML = '';
-  chatInput.disabled = true;
-  chatSend.disabled = true;
-  verdictValue.textContent = '—';
-  matchValue.textContent = '—';
-  aiValue.textContent = '—';
-  flagsValue.textContent = '—';
-  matchBar.style.width = '0%';
-  aiBar.style.width = '0%';
-
-  updateAnalyzeBtn();
-
-  // Scroll back to top
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-});
-
-// ============================================================
-// UTILITIES
-// ============================================================
-
-function setStatus(msg) {
-  statusText.textContent = msg;
+// ─── Utilities ────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-function showError(msg) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'chat-msg chat-msg--assistant';
+// ─── Event bindings ───────────────────────────────────────────
+function bindEvents() {
+  // Header buttons
+  document.getElementById('add-med-btn').addEventListener('click', openAddModal);
+  document.getElementById('settings-btn').addEventListener('click', openSettingsModal);
 
-  const label = document.createElement('div');
-  label.className = 'msg-label';
-  label.textContent = 'Error';
+  // Age banner dismiss
+  document.getElementById('age-banner-dismiss').addEventListener('click', () => {
+    ageDismissed = true;
+    document.getElementById('age-banner').hidden = true;
+  });
 
-  const bubble = document.createElement('div');
-  bubble.className = 'msg-bubble';
-  bubble.style.borderColor = 'var(--red-high)';
-  bubble.style.color = 'var(--red-high)';
-  bubble.textContent = `⚠️ ${msg}`;
+  // Add/edit modal
+  document.getElementById('modal-close-btn').addEventListener('click', closeModal);
+  document.getElementById('modal-cancel-btn').addEventListener('click', closeModal);
+  document.getElementById('modal-save-btn').addEventListener('click', saveMed);
 
-  wrapper.appendChild(label);
-  wrapper.appendChild(bubble);
-  chatMessages.appendChild(wrapper);
-  chatMessages.scrollTop = chatMessages.scrollHeight;
+  // Image upload area click
+  const uploadArea = document.getElementById('image-upload-area');
+  uploadArea.addEventListener('click', () => {
+    if (document.getElementById('upload-preview').hidden) {
+      document.getElementById('image-input').click();
+    }
+  });
 
-  resultsSection.classList.remove('hidden');
+  // Drag & drop
+  uploadArea.addEventListener('dragover', e => { e.preventDefault(); uploadArea.style.borderColor = 'var(--blue)'; });
+  uploadArea.addEventListener('dragleave', () => { uploadArea.style.borderColor = ''; });
+  uploadArea.addEventListener('drop', e => {
+    e.preventDefault();
+    uploadArea.style.borderColor = '';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      currentImageFile = file;
+      parseImage(file);
+    }
+  });
+
+  document.getElementById('image-input').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (file) {
+      currentImageFile = file;
+      parseImage(file);
+    }
+  });
+
+  document.getElementById('reparse-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    if (currentImageFile) parseImage(currentImageFile);
+  });
+
+  document.getElementById('remove-image-btn').addEventListener('click', e => {
+    e.stopPropagation();
+    currentImageFile = null;
+    existingImageFile = null;
+    document.getElementById('image-input').value = '';
+    document.getElementById('upload-preview').hidden = true;
+    document.getElementById('upload-placeholder').hidden = false;
+  });
+
+  // Interaction modal
+  document.getElementById('interaction-cancel-btn').addEventListener('click', () => {
+    pendingToggleId = null;
+    document.getElementById('interaction-modal').hidden = true;
+  });
+  document.getElementById('interaction-confirm-btn').addEventListener('click', confirmInteraction);
+
+  // View modal
+  document.getElementById('view-close-btn').addEventListener('click', () => {
+    document.getElementById('view-modal').hidden = true;
+  });
+  document.getElementById('view-close-footer-btn').addEventListener('click', () => {
+    document.getElementById('view-modal').hidden = true;
+  });
+  document.getElementById('view-edit-btn').addEventListener('click', () => {
+    const id = document.getElementById('view-edit-btn').dataset.id;
+    document.getElementById('view-modal').hidden = true;
+    openEditModal(id);
+  });
+
+  // Settings modal
+  document.getElementById('settings-close-btn').addEventListener('click', () => {
+    document.getElementById('settings-modal').hidden = true;
+  });
+  document.getElementById('settings-cancel-btn').addEventListener('click', () => {
+    document.getElementById('settings-modal').hidden = true;
+  });
+  document.getElementById('settings-save-btn').addEventListener('click', saveSettings);
+
+  // Close modals on overlay click
+  ['med-modal', 'settings-modal', 'view-modal'].forEach(id => {
+    document.getElementById(id).addEventListener('click', e => {
+      if (e.target === e.currentTarget) e.currentTarget.hidden = true;
+    });
+  });
 }
+
+// ─── Boot ─────────────────────────────────────────────────────
+init();
