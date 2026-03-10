@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Prescription Tracker</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <span class="header-icon">💊</span>
+      <div>
+        <h1>Prescription Tracker</h1>
+        <p>Manage your medications safely</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <a href="/" class="btn-settings" style="text-decoration:none;">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+        Home
+      </a>
+      <button class="btn-settings" id="settings-btn" title="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Settings
+      </button>
+      <button class="btn-primary" id="add-med-btn">+ Add Medication</button>
+    </div>
+  </div>
+</header>
+
+<!-- MAIN -->
+<main id="main-content">
+
+  <!-- Age notice banner -->
+  <div class="age-banner" id="age-banner" hidden>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    Set your age in Settings to get age-specific dosage recommendations.
+    <button class="age-banner-close" id="age-banner-dismiss">Dismiss</button>
+  </div>
+
+  <!-- Active meds section -->
+  <section id="active-section" hidden>
+    <h2 class="section-title">
+      <span class="section-dot active-dot"></span>
+      Currently Taking <span class="section-count" id="active-count"></span>
+    </h2>
+    <div class="med-list" id="active-list"></div>
+  </section>
+
+  <!-- Divider -->
+  <div class="section-divider" id="section-divider" hidden></div>
+
+  <!-- All meds section -->
+  <section id="all-section">
+    <h2 class="section-title">
+      <span class="section-dot"></span>
+      All Medications <span class="section-count" id="all-count"></span>
+    </h2>
+    <div class="med-list" id="all-list">
+      <div class="empty-state" id="empty-state">
+        <div class="empty-icon">💊</div>
+        <p>No medications added yet.</p>
+        <button class="btn-primary" onclick="document.getElementById('add-med-btn').click()">Add Your First Medication</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- ═══════════════════════════════════════════ ADD / EDIT MODAL ═══ -->
+<div class="modal-overlay" id="med-modal" hidden>
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Add Medication</h2>
+      <button class="modal-close" id="modal-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- Image upload -->
+      <div class="image-upload-area" id="image-upload-area">
+        <input type="file" id="image-input" accept="image/*" hidden />
+        <div class="upload-placeholder" id="upload-placeholder">
+          <div class="upload-icon">📷</div>
+          <p>Upload label image</p>
+          <span class="upload-hint">Claude will read and fill the fields automatically</span>
+        </div>
+        <div class="upload-preview" id="upload-preview" hidden>
+          <img id="preview-img" src="" alt="Medication label" />
+          <div class="preview-overlay">
+            <button class="btn-icon" id="reparse-btn" title="Re-extract from image">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4v6h6"/><path d="M23 20v-6h-6"/><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"/></svg>
+              Re-extract
+            </button>
+            <button class="btn-icon btn-icon-danger" id="remove-image-btn" title="Remove image">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+              Remove
+            </button>
+          </div>
+        </div>
+        <div class="parse-loading" id="parse-loading" hidden>
+          <div class="spinner"></div>
+          <p>Reading label with Claude...</p>
+        </div>
+      </div>
+
+      <!-- Parse error -->
+      <div class="parse-error" id="parse-error" hidden></div>
+
+      <!-- Fields -->
+      <div class="form-grid">
+        <div class="form-group form-group-full">
+          <label for="field-name">Medication Name <span class="required">*</span></label>
+          <input type="text" id="field-name" placeholder="e.g. Metformin" />
+        </div>
+        <div class="form-group">
+          <label for="field-dosage">Dosage Strength</label>
+          <input type="text" id="field-dosage" placeholder="e.g. 500mg" />
+        </div>
+        <div class="form-group">
+          <label for="field-frequency">Frequency</label>
+          <input type="text" id="field-frequency" placeholder="e.g. Twice daily" />
+        </div>
+        <div class="form-group form-group-full">
+          <label for="field-age-dosage">Recommended Dosage <span class="field-tag" id="age-dosage-tag"></span></label>
+          <textarea id="field-age-dosage" rows="2" placeholder="Age-specific and prescription-based dosage recommendation"></textarea>
+        </div>
+        <div class="form-group form-group-full">
+          <label for="field-usage">How to Use</label>
+          <textarea id="field-usage" rows="3" placeholder="Instructions for taking this medication"></textarea>
+        </div>
+        <div class="form-group form-group-full">
+          <label for="field-warnings">Warnings &amp; Side Effects</label>
+          <textarea id="field-warnings" rows="3" placeholder="Important warnings and side effects"></textarea>
+        </div>
+        <div class="form-group form-group-full">
+          <label for="field-interactions">Drug &amp; Food Interactions</label>
+          <textarea id="field-interactions" rows="3" placeholder="Known interactions with other drugs or foods"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="modal-cancel-btn">Cancel</button>
+      <button class="btn-primary" id="modal-save-btn">Save Medication</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ SETTINGS MODAL ════ -->
+<div class="modal-overlay" id="settings-modal" hidden>
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <h2>Settings</h2>
+      <button class="modal-close" id="settings-close-btn">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label for="settings-age">Your Age</label>
+        <p class="field-hint">Used to provide age-specific dosage recommendations when parsing medication labels.</p>
+        <input type="number" id="settings-age" placeholder="e.g. 45" min="0" max="120" />
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="settings-cancel-btn">Cancel</button>
+      <button class="btn-primary" id="settings-save-btn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ INTERACTION WARNING ═ -->
+<div class="modal-overlay" id="interaction-modal" hidden>
+  <div class="modal modal-sm">
+    <div class="modal-header modal-header-warning">
+      <h2>Interaction Warning</h2>
+    </div>
+    <div class="modal-body">
+      <p class="interaction-med-name" id="interaction-med-name"></p>
+      <div class="interaction-warning-box" id="interaction-warning-text"></div>
+      <p class="interaction-sub">Consult your doctor or pharmacist before taking these together.</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="interaction-cancel-btn">Cancel</button>
+      <button class="btn-warning" id="interaction-confirm-btn">Mark as Taking Anyway</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ VIEW MODAL ════════ -->
+<div class="modal-overlay" id="view-modal" hidden>
+  <div class="modal modal-wide">
+    <div class="modal-header">
+      <div>
+        <h2 id="view-med-name"></h2>
+        <span class="view-dosage" id="view-dosage"></span>
+      </div>
+      <button class="modal-close" id="view-close-btn">&times;</button>
+    </div>
+    <div class="modal-body view-body">
+      <div class="view-image-col" id="view-image-col" hidden>
+        <img id="view-image" src="" alt="Medication label" />
+        <p class="view-image-caption">Original label for reference</p>
+      </div>
+      <div class="view-info-col">
+        <div class="view-section" id="vs-age-dosage" hidden>
+          <h3>Recommended Dosage</h3>
+          <p id="view-age-dosage"></p>
+        </div>
+        <div class="view-section" id="vs-usage" hidden>
+          <h3>How to Use</h3>
+          <p id="view-usage"></p>
+        </div>
+        <div class="view-section" id="vs-warnings" hidden>
+          <h3>Warnings &amp; Side Effects</h3>
+          <p id="view-warnings"></p>
+        </div>
+        <div class="view-section" id="vs-interactions" hidden>
+          <h3>Drug &amp; Food Interactions</h3>
+          <p id="view-interactions"></p>
+        </div>
+        <div class="view-empty" id="view-empty" hidden>
+          <p>No details available. Try uploading the medication label image.</p>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" id="view-edit-btn">Edit</button>
+      <button class="btn-secondary" id="view-close-footer-btn">Close</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

@@ -299,10 +299,21 @@ Respond with ONLY valid JSON:
   res.json({ active: med.active, medication: med });
 });
 
-// ─── Health & catch-all ───────────────────────────────────────────────────────
+// ─── Health & routing ─────────────────────────────────────────────────────────
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
+// Landing page
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
+});
+
+// Prescription tracker
+app.get(['/tracker', '/tracker/*'], (_req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'public', 'tracker.html'));
+});
+
+// Catch-all → landing page
 app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '..', 'public', 'index.html'));
 });
