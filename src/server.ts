@@ -32,6 +32,160 @@ app.use(express.json({ limit: '5mb' }));
 // Serve each app's static assets from its own sub-folder
 app.use('/todo',     express.static(path.join(__dirname, '..', 'public', 'todo')));
 app.use('/detector', express.static(path.join(__dirname, '..', 'public', 'detector')));
+app.use('/tracker',  express.static(path.join(__dirname, '..', 'public', 'tracker')));
+
+// ─── Prescription tracker data setup ─────────────────────────────────────────
+import fs from 'fs';
+
+const DATA_DIR = path.join(__dirname, '..', 'data');
+const IMAGES_DIR = path.join(DATA_DIR, 'images');
+const MED_DATA_FILE = path.join(DATA_DIR, 'medications.json');
+const SETTINGS_FILE = path.join(DATA_DIR, 'settings.json');
+
+for (const dir of [DATA_DIR, IMAGES_DIR]) {
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
+interface Medication {
+  id: string; name: string; dosage: string; frequency: string;
+  usage: string; warnings: string; interactions: string; ageDosageNote: string;
+  imageFile?: string; active: boolean; createdAt: string; updatedAt: string;
+}
+interface Settings { userAge: number | null; }
+
+function loadMedications(): Medication[] {
+  if (!fs.existsSync(MED_DATA_FILE)) return [];
+  return JSON.parse(fs.readFileSync(MED_DATA_FILE, 'utf-8'));
+}
+function saveMedications(meds: Medication[]): void {
+  fs.writeFileSync(MED_DATA_FILE, JSON.stringify(meds, null, 2));
+}
+function loadSettings(): Settings {
+  if (!fs.existsSync(SETTINGS_FILE)) return { userAge: null };
+  return JSON.parse(fs.readFileSync(SETTINGS_FILE, 'utf-8'));
+}
+function saveSettings(s: Settings): void {
+  fs.writeFileSync(SETTINGS_FILE, JSON.stringify(s, null, 2));
+}
+
+const imgStorage = multer.diskStorage({
+  destination: IMAGES_DIR,
+  filename: (_req, file, cb) => {
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${path.extname(file.originalname)}`);
+  },
+});
+const imgUpload = multer({
+  storage: imgStorage,
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (['.jpg','.jpeg','.png','.gif','.webp'].includes(path.extname(file.originalname).toLowerCase())) {
+      cb(null, true);
+    } else { cb(new Error('Only image files are supported')); }
+  },
+});
+app.use('/tracker-images', express.static(IMAGES_DIR));
+
+// Settings
+app.get('/api/tracker/settings', (_req, res) => res.json(loadSettings()));
+app.put('/api/tracker/settings', (req: Request, res: Response): void => {
+  const { userAge } = req.body;
+  if (userAge !== null && userAge !== undefined && (typeof userAge !== 'number' || userAge < 0 || userAge > 120)) {
+    res.status(400).json({ error: 'Invalid age' }); return;
+  }
+  const s: Settings = { userAge: userAge ?? null };
+  saveSettings(s); res.json(s);
+});
+
+// Parse image
+app.post('/api/tracker/parse-image', imgUpload.single('image'), async (req: Request, res: Response): Promise<void> => {
+  if (!req.file) { res.status(400).json({ error: 'No image provided' }); return; }
+  const { userAge } = loadSettings();
+  const ageContext = userAge !== null
+    ? `The user is ${userAge} years old. Include age-appropriate dosing notes.`
+    : 'No age info available; provide general dosing notes.';
+  try {
+    const base64Image = fs.readFileSync(req.file.path).toString('base64');
+    const mimeType = req.file.mimetype as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+    const response = await client.messages.create({
+      model: 'claude-opus-4-6', max_tokens: 1024,
+      messages: [{ role: 'user', content: [
+        { type: 'image', source: { type: 'base64', media_type: mimeType, data: base64Image } },
+        { type: 'text', text: `Extract all medication information visible in this image. ${ageContext}\n\nReturn ONLY valid JSON:\n{"name":"","dosage":"","frequency":"","usage":"","warnings":"","interactions":"","ageDosageNote":""}` },
+      ]}],
+    });
+    const textBlock = response.content.find(b => b.type === 'text');
+    if (!textBlock || textBlock.type !== 'text') throw new Error('No response');
+    const parsed = JSON.parse(textBlock.text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim());
+    res.json({ ...parsed, imageFile: req.file.filename });
+  } catch (err) {
+    res.status(500).json({ error: `Parsing failed: ${(err as Error).message}`, imageFile: req.file.filename });
+  }
+});
+
+// Medications CRUD
+app.get('/api/tracker/medications', (_req, res) => {
+  const meds = loadMedications();
+  meds.sort((a, b) => a.active !== b.active ? (a.active ? -1 : 1) : a.name.localeCompare(b.name));
+  res.json(meds);
+});
+app.post('/api/tracker/medications', (req: Request, res: Response): void => {
+  const { name, dosage, frequency, usage, warnings, interactions, ageDosageNote, imageFile } = req.body;
+  if (!name) { res.status(400).json({ error: 'Name required' }); return; }
+  const med: Medication = {
+    id: `med-${Date.now()}-${Math.random().toString(36).slice(2)}`, name,
+    dosage: dosage||'', frequency: frequency||'', usage: usage||'',
+    warnings: warnings||'', interactions: interactions||'', ageDosageNote: ageDosageNote||'',
+    imageFile: imageFile||undefined, active: false,
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+  };
+  const meds = loadMedications(); meds.push(med); saveMedications(meds); res.json(med);
+});
+app.put('/api/tracker/medications/:id', (req: Request, res: Response): void => {
+  const meds = loadMedications(); const idx = meds.findIndex(m => m.id === req.params.id);
+  if (idx === -1) { res.status(404).json({ error: 'Not found' }); return; }
+  const fields: (keyof Medication)[] = ['name','dosage','frequency','usage','warnings','interactions','ageDosageNote','imageFile'];
+  const updated = { ...meds[idx] };
+  for (const f of fields) { if (req.body[f] !== undefined) (updated as Record<string,unknown>)[f] = req.body[f]; }
+  updated.updatedAt = new Date().toISOString();
+  meds[idx] = updated; saveMedications(meds); res.json(updated);
+});
+app.delete('/api/tracker/medications/:id', (req: Request, res: Response): void => {
+  const meds = loadMedications(); const idx = meds.findIndex(m => m.id === req.params.id);
+  if (idx === -1) { res.status(404).json({ error: 'Not found' }); return; }
+  if (meds[idx].imageFile) {
+    const p = path.join(IMAGES_DIR, meds[idx].imageFile!);
+    if (fs.existsSync(p)) fs.unlinkSync(p);
+  }
+  meds.splice(idx, 1); saveMedications(meds); res.json({ success: true });
+});
+
+// Toggle + interaction check
+app.post('/api/tracker/medications/:id/toggle', async (req: Request, res: Response): Promise<void> => {
+  const meds = loadMedications(); const med = meds.find(m => m.id === req.params.id);
+  if (!med) { res.status(404).json({ error: 'Not found' }); return; }
+  const activating = !med.active;
+  if (activating) {
+    const activeMeds = meds.filter(m => m.active);
+    if (activeMeds.length > 0) {
+      try {
+        const activeList = activeMeds.map(m => `- ${m.name}${m.dosage?` (${m.dosage})`:''}${m.interactions?`: ${m.interactions}`:''}`).join('\n');
+        const response = await client.messages.create({
+          model: 'claude-opus-4-6', max_tokens: 512,
+          messages: [{ role: 'user', content: `Does "${med.name}"${med.dosage?` (${med.dosage})`:''} have clinically significant interactions with:\n${activeList}\nKnown interactions for ${med.name}: ${med.interactions||'none'}\n\nRespond ONLY with JSON: {"hasInteractions":true/false,"warning":""}` }],
+        });
+        const textBlock = response.content.find(b => b.type === 'text');
+        if (textBlock && textBlock.type === 'text') {
+          const result = JSON.parse(textBlock.text.replace(/```json\n?/g,'').replace(/```\n?/g,'').trim());
+          if (result.hasInteractions && result.warning && req.body.confirmed !== true) {
+            res.json({ requiresConfirmation: true, warning: result.warning }); return;
+          }
+        }
+      } catch (err) { console.error('Interaction check error:', err); }
+    }
+  }
+  med.active = activating; med.updatedAt = new Date().toISOString();
+  saveMedications(meds); res.json({ active: med.active, medication: med });
+});
 
 // Extract text from uploaded file buffer
 async function extractText(buffer: Buffer, mimetype: string, originalname: string): Promise<string> {
