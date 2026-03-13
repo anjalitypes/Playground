@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Case Management App</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* Phone Shell */
+    .phone {
+      width: 375px;
+      min-height: 700px;
+      background: #fff;
+      border-radius: 40px;
+      box-shadow: 0 0 0 10px #1a1a1a, 0 30px 80px rgba(0,0,0,0.5);
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      background: #fff;
+      padding: 12px 20px 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+    .status-bar .time { font-size: 13px; }
+    .status-bar .icons { display: flex; gap: 4px; align-items: center; }
+    .status-bar .icons span { font-size: 11px; }
+
+    /* Notch */
+    .notch {
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 150px; height: 28px;
+      background: #1a1a1a;
+      border-radius: 0 0 20px 20px;
+      z-index: 10;
+    }
+
+    /* Screen */
+    .screen {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+    }
+    .screen.active { display: flex; }
+
+    /* Screen Header */
+    .screen-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .screen-title {
+      font-size: 22px;
+      font-weight: 700;
+      color: #111;
+      text-align: center;
+      flex: 1;
+    }
+    .icon-btn {
+      width: 36px; height: 36px;
+      border: none; background: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+      color: #333;
+      border-radius: 50%;
+    }
+    .icon-btn:hover { background: #f0f0f0; }
+
+    /* Back button */
+    .back-btn {
+      background: none; border: none; cursor: pointer;
+      font-size: 22px; color: #555;
+      display: flex; align-items: center;
+      gap: 4px;
+    }
+    .back-btn:hover { color: #000; }
+
+    /* Case Card */
+    .case-card {
+      border: 1.5px solid #ccc;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      cursor: pointer;
+      transition: background 0.15s, box-shadow 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .case-card:hover { background: #f5f5f5; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+    .case-card .case-info { font-size: 14px; color: #333; }
+    .case-card .case-id { font-size: 12px; color: #888; margin-top: 2px; }
+    .case-card .badge {
+      background: #ff4444; color: #fff;
+      border-radius: 12px; padding: 2px 8px;
+      font-size: 11px; font-weight: 700;
+    }
+
+    /* Section Block */
+    .section-block {
+      border: 1.5px solid #ccc;
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 20px;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .section-block:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+    .section-placeholder {
+      width: 100%; height: 160px;
+      background: #f0f0f0;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+    }
+    .section-placeholder::before,
+    .section-placeholder::after {
+      content: '';
+      position: absolute;
+      background: #ccc;
+      height: 1.5px;
+      width: 100%;
+    }
+    .section-placeholder::before { transform: rotate(35deg); }
+    .section-placeholder::after { transform: rotate(-35deg); }
+    .section-label {
+      padding: 14px 16px;
+      font-size: 18px;
+      font-weight: 600;
+      color: #111;
+      text-align: center;
+      border-top: 1px solid #eee;
+    }
+
+    /* Forms */
+    .form-group { margin-bottom: 16px; }
+    .form-label {
+      font-size: 13px; font-weight: 600; color: #444;
+      display: block; margin-bottom: 6px;
+    }
+    .form-input, .form-textarea {
+      width: 100%;
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 14px;
+      color: #333;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-textarea:focus { border-color: #555; }
+    .form-textarea { resize: none; min-height: 100px; }
+    .form-textarea.large { min-height: 130px; }
+
+    .file-row {
+      display: flex; gap: 8px; align-items: center;
+    }
+    .file-row .form-input { flex: 1; }
+    .browse-btn {
+      padding: 10px 14px;
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      background: #f5f5f5;
+      cursor: pointer;
+      font-size: 13px;
+      white-space: nowrap;
+      transition: background 0.15s;
+    }
+    .browse-btn:hover { background: #e8e8e8; }
+
+    /* Checkbox */
+    .checkbox-row {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 10px;
+    }
+    .checkbox-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; }
+    .checkbox-row label { font-size: 13px; color: #444; cursor: pointer; }
+
+    /* Buttons */
+    .btn {
+      width: 100%;
+      padding: 13px;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+      margin-top: 8px;
+    }
+    .btn:hover { opacity: 0.88; }
+    .btn:active { transform: scale(0.98); }
+    .btn-primary { background: #222; color: #fff; }
+    .btn-secondary { background: #f0f0f0; color: #333; border: 1.5px solid #ccc; }
+    .btn-danger { background: #d32f2f; color: #fff; }
+    .btn-outline {
+      background: transparent;
+      border: 1.5px solid #333;
+      color: #333;
+    }
+
+    /* Evidence grid */
+    .evidence-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 12px 0;
+    }
+    .evidence-item {
+      aspect-ratio: 1;
+      border: 1.5px solid #ccc;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #f5f5f5;
+      display: flex; align-items: center; justify-content: center;
+      position: relative;
+      cursor: pointer;
+    }
+    .evidence-item .img-icon { font-size: 36px; color: #aaa; }
+    .evidence-item img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Chat */
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-height: 340px;
+    }
+    .msg {
+      max-width: 70%;
+      padding: 10px 14px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .msg.received { background: #f0f0f0; color: #222; align-self: flex-start; border-bottom-left-radius: 4px; }
+    .msg.sent { background: #222; color: #fff; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .chat-input-row {
+      display: flex; gap: 8px; align-items: center;
+      border-top: 1px solid #eee;
+      padding-top: 12px;
+      margin-top: 8px;
+    }
+    .chat-input-row input {
+      flex: 1;
+      border: 1.5px solid #ccc;
+      border-radius: 24px;
+      padding: 10px 16px;
+      font-size: 14px;
+      outline: none;
+    }
+    .chat-input-row input:focus { border-color: #555; }
+    .send-btn {
+      width: 40px; height: 40px;
+      background: #222; color: #fff;
+      border: none; border-radius: 50%;
+      cursor: pointer; font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .keyboard-mock {
+      background: #d1d5db;
+      border-radius: 8px;
+      padding: 8px;
+      margin-top: 8px;
+    }
+    .keyboard-row {
+      display: flex; gap: 4px; justify-content: center; margin-bottom: 4px;
+    }
+    .key {
+      flex: 1;
+      background: #fff;
+      border-radius: 5px;
+      padding: 7px 2px;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 500;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+      cursor: pointer;
+      user-select: none;
+    }
+    .key.wide { flex: 1.5; }
+    .key.space { flex: 4; }
+    .key.dark { background: #adb5bd; }
+
+    /* Timeline */
+    .timeline { padding: 8px 0; }
+    .timeline-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .timeline-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      border: 2px solid #555;
+      background: #fff;
+      flex-shrink: 0;
+      margin-top: 4px;
+    }
+    .timeline-content { flex: 1; }
+    .timeline-subtitle { font-size: 14px; color: #333; }
+    .timeline-date { font-size: 12px; color: #888; margin-top: 2px; }
+
+    /* Victim info */
+    .info-row {
+      margin-bottom: 12px;
+    }
+    .info-row .info-label { font-size: 12px; color: #888; margin-bottom: 2px; }
+    .info-row .info-value { font-size: 15px; color: #222; font-weight: 500; }
+
+    /* Divider */
+    .divider { height: 1px; background: #eee; margin: 12px 0; }
+
+    /* Section heading */
+    .section-heading {
+      font-size: 14px; font-weight: 700; color: #444;
+      margin-bottom: 10px; text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Role selector */
+    .role-selector {
+      display: flex; gap: 10px; margin-bottom: 24px;
+    }
+    .role-btn {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #ccc;
+      border-radius: 12px;
+      background: #fff;
+      cursor: pointer;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      color: #555;
+      transition: all 0.15s;
+    }
+    .role-btn.selected, .role-btn:hover {
+      border-color: #222; background: #222; color: #fff;
+    }
+
+    /* App intro */
+    .app-logo {
+      text-align: center;
+      margin: 20px 0 28px;
+    }
+    .app-logo .logo-icon { font-size: 56px; }
+    .app-logo h1 { font-size: 24px; font-weight: 800; color: #111; margin-top: 8px; }
+    .app-logo p { font-size: 13px; color: #888; margin-top: 4px; }
+
+    /* Label badge new */
+    .new-label {
+      font-size: 13px; font-weight: 700; color: #d32f2f;
+      margin-bottom: 8px;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+
+    /* Home Page text mock */
+    .text-lines { margin-bottom: 16px; }
+    .text-line {
+      height: 6px; background: #e0e0e0;
+      border-radius: 3px; margin-bottom: 5px;
+    }
+    .text-line:last-child { width: 60%; }
+
+    /* Top bar icons row */
+    .top-icons {
+      display: flex; justify-content: space-between;
+      padding: 4px 0 8px;
+      font-size: 20px;
+    }
+
+    /* Complaint box */
+    .complaint-box {
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 14px;
+      color: #555;
+      min-height: 80px;
+      background: #fafafa;
+    }
+
+    /* Update badge row */
+    .status-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-open { background: #fff3e0; color: #e65100; }
+    .status-closed { background: #e8f5e9; color: #2e7d32; }
+  </style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="notch"></div>
+  <div class="status-bar">
+    <span class="time">09:52 AM</span>
+    <div class="icons">
+      <span>📶</span>
+      <span>WiFi</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <!-- ====== SCREEN: Login / Role Selection ====== -->
+  <div class="screen active" id="screen-login">
+    <div class="app-logo">
+      <div class="logo-icon">⚖️</div>
+      <h1>CaseTrack</h1>
+      <p>Police Case Management System</p>
+    </div>
+    <p style="font-size:14px;color:#666;text-align:center;margin-bottom:20px;">Choose your role to continue</p>
+    <div class="role-selector">
+      <button class="role-btn" onclick="go('screen-home-public')">🧑 Public / Victim</button>
+      <button class="role-btn" onclick="go('screen-officer-cases')">👮 Officer</button>
+    </div>
+    <p style="font-size:11px;color:#aaa;text-align:center;margin-top:16px;">Demo app — tap a role to enter</p>
+  </div>
+
+  <!-- ====== SCREEN: Home Page (Public) ====== -->
+  <div class="screen" id="screen-home-public">
+    <div class="screen-header">
+      <div style="width:36px"></div>
+      <span class="screen-title">Home Page</span>
+      <button class="icon-btn" title="Profile">👤</button>
+    </div>
+    <div class="text-lines">
+      <div class="text-line"></div>
+      <div class="text-line"></div>
+      <div class="text-line"></div>
+      <div class="text-line" style="width:80%"></div>
+      <div class="text-line"></div>
+      <div class="text-line"></div>
+    </div>
+    <div class="section-block" onclick="go('screen-new-case')">
+      <div class="section-placeholder"></div>
+      <div class="section-label">NEW Case</div>
+    </div>
+    <div class="section-block" onclick="go('screen-old-cases')">
+      <div class="section-placeholder"></div>
+      <div class="section-label">Old Case</div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="go('screen-login')">← Back to Login</button>
+  </div>
+
+  <!-- ====== SCREEN: New Case Form ====== -->
+  <div class="screen" id="screen-new-case">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-home-public')">‹</button>
+      <span class="screen-title">New Case</span>
+      <div style="width:36px"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Write your complaint</label>
+      <textarea class="form-textarea large" placeholder="Describe your complaint in detail..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Upload a file:</label>
+      <div class="file-row">
+        <input class="form-input" type="text" placeholder="No file chosen" readonly />
+        <button class="browse-btn" onclick="document.getElementById('file-upload').click()">Browse...</button>
+        <input type="file" id="file-upload" style="display:none" />
+      </div>
+    </div>
+    <div class="checkbox-row">
+      <input type="checkbox" id="old-case-check" onchange="toggleOldCase()" />
+      <label for="old-case-check">Complain of old case</label>
+    </div>
+    <div id="old-case-id-group" style="display:none" class="form-group">
+      <label class="form-label">Enter old case Id</label>
+      <input class="form-input" type="text" placeholder="e.g. CASE-2023-0042" />
+    </div>
+    <button class="btn btn-primary" style="margin-top:12px" onclick="go('screen-old-cases')">Continue</button>
+  </div>
+
+  <!-- ====== SCREEN: Old Cases ====== -->
+  <div class="screen" id="screen-old-cases">
+    <div class="screen-header">
+      <div class="top-icons" style="font-size:18px;gap:8px;display:flex">
+        <span>🔔</span>
+      </div>
+      <span class="screen-title">Old Cases</span>
+      <div class="top-icons">
+        <span>📋</span>
+      </div>
+    </div>
+    <div class="case-card" onclick="go('screen-case-details')">
+      <div>
+        <div class="case-info">Case Name: Theft Complaint</div>
+        <div class="case-id">Case ID: CASE-2024-0011</div>
+      </div>
+      <span class="status-badge status-open">Open</span>
+    </div>
+    <div class="case-card" onclick="go('screen-case-details')">
+      <div>
+        <div class="case-info">Case Name: Harassment</div>
+        <div class="case-id">Case ID: CASE-2024-0007</div>
+      </div>
+      <span class="status-badge status-closed">Closed</span>
+    </div>
+    <div class="case-card" onclick="go('screen-case-details')">
+      <div>
+        <div class="case-info">Case Name: Property Damage</div>
+        <div class="case-id">Case ID: CASE-2023-0089</div>
+      </div>
+      <span class="status-badge status-closed">Closed</span>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:12px" onclick="go('screen-home-public')">← Back</button>
+  </div>
+
+  <!-- ====== SCREEN: Case Details ====== -->
+  <div class="screen" id="screen-case-details">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-old-cases')">‹</button>
+      <div>
+        <div class="screen-title" style="font-size:18px">Case Details</div>
+        <div style="font-size:12px;color:#888;text-align:center">CASE-2024-0011</div>
+      </div>
+      <button class="icon-btn" onclick="go('screen-chat')" title="Chat">💬</button>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Victims Name</div>
+      <div class="info-value">abc</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Case Details</label>
+      <div class="complaint-box">Complain: My belongings were stolen from my vehicle on January 22nd while parked outside the mall.</div>
+    </div>
+    <div class="divider"></div>
+    <div class="section-heading">Evidence</div>
+    <div class="evidence-grid">
+      <div class="evidence-item"><span class="img-icon">🖼️</span></div>
+      <div class="evidence-item"><span class="img-icon">🖼️</span></div>
+      <div class="evidence-item"><span class="img-icon">🖼️</span></div>
+      <div class="evidence-item"><span class="img-icon">🖼️</span></div>
+    </div>
+    <button class="btn btn-primary" onclick="go('screen-case-update-history')">Update</button>
+  </div>
+
+  <!-- ====== SCREEN: Chat ====== -->
+  <div class="screen" id="screen-chat">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-case-details')">‹</button>
+      <span class="screen-title">Chat</span>
+      <div style="width:36px"></div>
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="msg received">Hello, how can I help you with your case?</div>
+      <div class="msg sent">I wanted to follow up on Case 0011.</div>
+      <div class="msg received">We are currently investigating. An officer will contact you soon.</div>
+      <div class="msg sent">Thank you!</div>
+      <div class="msg received">Do you have any additional evidence to provide?</div>
+      <div class="msg sent">Yes, I'll upload more photos now.</div>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chat-input" placeholder="Type a message..." onkeydown="sendMsg(event)" />
+      <button class="send-btn" onclick="sendMsg({key:'Enter'})">▷</button>
+    </div>
+    <div class="keyboard-mock">
+      <div class="keyboard-row">
+        <div class="key">Q</div><div class="key">W</div><div class="key">E</div>
+        <div class="key">R</div><div class="key">T</div><div class="key">Y</div>
+        <div class="key">U</div><div class="key">I</div><div class="key">O</div>
+        <div class="key">P</div>
+      </div>
+      <div class="keyboard-row">
+        <div class="key">A</div><div class="key">S</div><div class="key">D</div>
+        <div class="key">F</div><div class="key">G</div><div class="key">H</div>
+        <div class="key">J</div><div class="key">K</div><div class="key">L</div>
+      </div>
+      <div class="keyboard-row">
+        <div class="key dark wide">⇧</div>
+        <div class="key">Z</div><div class="key">X</div><div class="key">C</div>
+        <div class="key">V</div><div class="key">B</div><div class="key">N</div>
+        <div class="key">M</div>
+        <div class="key dark wide">⌫</div>
+      </div>
+      <div class="keyboard-row">
+        <div class="key dark wide">123</div>
+        <div class="key dark">🌐</div>
+        <div class="key space">space</div>
+        <div class="key dark wide">return</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SCREEN: Case Update History ====== -->
+  <div class="screen" id="screen-case-update-history">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-case-details')">‹</button>
+      <span class="screen-title">Case Update</span>
+      <div style="width:36px"></div>
+    </div>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-subtitle">Case Filed</div>
+          <div class="timeline-date">24.01.2024</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-subtitle">Assigned to Officer</div>
+          <div class="timeline-date">24.01.2024</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-subtitle">Investigation Started</div>
+          <div class="timeline-date">24.01.2024</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-subtitle">Evidence Collected</div>
+          <div class="timeline-date">24.01.2024</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-subtitle">Suspect Identified</div>
+          <div class="timeline-date">24.01.2024</div>
+        </div>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-content">
+          <div class="timeline-subtitle">Under Review</div>
+          <div class="timeline-date">24.01.2024</div>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-secondary" onclick="go('screen-case-details')">← Back</button>
+  </div>
+
+  <!-- ====== SCREEN: ID Upload ====== -->
+  <div class="screen" id="screen-id-upload">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-officer-cases')">‹</button>
+      <span class="screen-title">ID</span>
+      <div style="width:36px"></div>
+    </div>
+    <div class="form-group" style="margin-top:20px">
+      <label class="form-label">Upload Inmate's ID:</label>
+      <div class="file-row">
+        <input class="form-input" type="text" placeholder="No file chosen" readonly />
+        <button class="browse-btn">Browse...</button>
+      </div>
+    </div>
+    <div style="flex:1"></div>
+    <button class="btn btn-primary" onclick="alert('ID Submitted!')">Submit</button>
+  </div>
+
+  <!-- ====== SCREEN: Officer Cases ====== -->
+  <div class="screen" id="screen-officer-cases">
+    <div class="screen-header">
+      <div style="width:36px"></div>
+      <span class="screen-title">Officer Cases</span>
+      <button class="icon-btn" title="Profile">👤</button>
+    </div>
+    <div class="section-block" onclick="go('screen-unsolved-cases')">
+      <div class="section-placeholder"></div>
+      <div class="section-label">Unsolved Case</div>
+    </div>
+    <div class="section-block" onclick="go('screen-solved-cases')">
+      <div class="section-placeholder"></div>
+      <div class="section-label">Solved Cases</div>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:8px" onclick="go('screen-login')">← Back to Login</button>
+  </div>
+
+  <!-- ====== SCREEN: Unsolved Cases ====== -->
+  <div class="screen" id="screen-unsolved-cases">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-officer-cases')">‹</button>
+      <span class="screen-title">Unsolved Cases</span>
+      <div style="width:36px"></div>
+    </div>
+    <div class="new-label">New*</div>
+    <div class="case-card" onclick="go('screen-case-updation')">
+      <div>
+        <div class="case-info">Case Name: Street Robbery</div>
+        <div class="case-id">Case ID: CASE-2024-0031</div>
+      </div>
+      <span class="badge">NEW</span>
+    </div>
+    <div class="case-card" onclick="go('screen-case-updation')">
+      <div>
+        <div class="case-info">Case Name: Vehicle Theft</div>
+        <div class="case-id">Case ID: CASE-2024-0028</div>
+      </div>
+    </div>
+    <div class="case-card" onclick="go('screen-case-updation')">
+      <div>
+        <div class="case-info">Case Name: Assault Report</div>
+        <div class="case-id">Case ID: CASE-2024-0025</div>
+      </div>
+    </div>
+    <div class="case-card" onclick="go('screen-case-updation')">
+      <div>
+        <div class="case-info">Case Name: Vandalism</div>
+        <div class="case-id">Case ID: CASE-2024-0019</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== SCREEN: Solved Cases ====== -->
+  <div class="screen" id="screen-solved-cases">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-officer-cases')">‹</button>
+      <span class="screen-title">Solved Cases</span>
+      <div style="width:36px"></div>
+    </div>
+    <div class="case-card">
+      <div>
+        <div class="case-info">Case Name: Theft Complaint</div>
+        <div class="case-id">Case ID: CASE-2024-0011</div>
+      </div>
+      <span class="status-badge status-closed">Closed</span>
+    </div>
+    <div class="case-card">
+      <div>
+        <div class="case-info">Case Name: Fraud Report</div>
+        <div class="case-id">Case ID: CASE-2023-0098</div>
+      </div>
+      <span class="status-badge status-closed">Closed</span>
+    </div>
+    <div class="case-card">
+      <div>
+        <div class="case-info">Case Name: Property Damage</div>
+        <div class="case-id">Case ID: CASE-2023-0089</div>
+      </div>
+      <span class="status-badge status-closed">Closed</span>
+    </div>
+  </div>
+
+  <!-- ====== SCREEN: Case Updation (Officer View) ====== -->
+  <div class="screen" id="screen-case-updation">
+    <div class="screen-header">
+      <button class="back-btn" onclick="go('screen-unsolved-cases')">‹</button>
+      <div>
+        <div class="screen-title" style="font-size:17px">Case Updation</div>
+        <div style="font-size:12px;color:#888;text-align:center">CASE-2024-0031</div>
+      </div>
+      <div style="width:36px"></div>
+    </div>
+    <div class="info-row">
+      <div class="info-label">Victims Name</div>
+      <div class="info-value">abc</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Officer Remarks</label>
+      <textarea class="form-textarea" placeholder="Add your investigation remarks..."></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Complain</label>
+      <div class="complaint-box">Complain: My belongings were stolen from my vehicle on January 22nd while parked outside the mall.</div>
+    </div>
+    <button class="btn btn-primary" onclick="go('screen-id-upload')">Update Case</button>
+    <button class="btn btn-danger" style="margin-top:8px" onclick="closeCase()">Close Case</button>
+  </div>
+
+</div><!-- .phone -->
+
+<script>
+  function go(screenId) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    const target = document.getElementById(screenId);
+    if (target) {
+      target.classList.add('active');
+      target.scrollTop = 0;
+    }
+  }
+
+  function toggleOldCase() {
+    const checked = document.getElementById('old-case-check').checked;
+    document.getElementById('old-case-id-group').style.display = checked ? 'block' : 'none';
+  }
+
+  function sendMsg(e) {
+    if (e.key !== 'Enter') return;
+    const input = document.getElementById('chat-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const container = document.getElementById('chat-messages');
+    const msg = document.createElement('div');
+    msg.className = 'msg sent';
+    msg.textContent = text;
+    container.appendChild(msg);
+    input.value = '';
+    container.scrollTop = container.scrollHeight;
+    // Auto reply after 800ms
+    setTimeout(() => {
+      const reply = document.createElement('div');
+      reply.className = 'msg received';
+      reply.textContent = 'Thank you for your message. We will look into it.';
+      container.appendChild(reply);
+      container.scrollTop = container.scrollHeight;
+    }, 800);
+  }
+
+  function closeCase() {
+    if (confirm('Mark this case as closed?')) {
+      go('screen-officer-cases');
+    }
+  }
+</script>
+</body>
+</html>
