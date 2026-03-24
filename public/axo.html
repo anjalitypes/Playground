@@ -206,46 +206,14 @@
 
     .layer-item {
       display: flex;
-      flex-direction: column;
-      gap: .3rem;
+      align-items: center;
+      gap: .45rem;
       padding: .35rem .45rem;
       border: 1px solid var(--border);
       border-radius: 8px;
       background: var(--bg-card2);
       transition: border-color .15s, opacity .15s, background .15s;
       user-select: none;
-    }
-
-    .layer-item-row {
-      display: flex;
-      align-items: center;
-      gap: .45rem;
-    }
-
-    .layer-radius-row {
-      display: flex;
-      align-items: center;
-      gap: .4rem;
-      padding: 0 .1rem;
-    }
-
-    .layer-radius-row label {
-      font-size: .72rem;
-      color: var(--text-muted);
-      flex-shrink: 0;
-      width: 44px;
-    }
-
-    .layer-radius-row input[type=range] {
-      flex: 1;
-    }
-
-    .layer-radius-val {
-      font-size: .72rem;
-      color: var(--text-muted);
-      width: 30px;
-      text-align: right;
-      flex-shrink: 0;
     }
 
     .layer-item.dragging  { opacity: .35; }
