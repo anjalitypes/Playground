@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Screen to Axo Drawing</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    /* ── Axo-specific layout ── */
+    .axo-hero {
+      max-width: 1100px;
+      margin: 2.5rem auto 0;
+      padding: 0 1.5rem;
+    }
+
+    .axo-hero-title {
+      font-size: 1.9rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: .3rem;
+    }
+
+    .axo-hero-sub {
+      color: var(--text-muted);
+      font-size: .95rem;
+    }
+
+    /* ── Upload zone ── */
+    .axo-upload-wrap {
+      max-width: 1100px;
+      margin: 1.75rem auto 0;
+      padding: 0 1.5rem;
+    }
+
+    .axo-drop-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      background: var(--bg-card);
+      padding: 3rem 2rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      display: block;
+      position: relative;
+    }
+
+    .axo-drop-zone:hover,
+    .axo-drop-zone.drag-over {
+      border-color: var(--accent);
+      background: var(--bg-card2);
+    }
+
+    .axo-drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .axo-drop-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+    .axo-drop-label { font-size: 1.05rem; color: var(--text); }
+    .axo-drop-label span { color: var(--accent); }
+    .axo-drop-hint { font-size: .82rem; color: var(--text-muted); margin-top: .35rem; }
+
+    /* ── Main workspace (canvas + controls) ── */
+    .axo-workspace {
+      max-width: 1100px;
+      margin: 2rem auto 3rem;
+      padding: 0 1.5rem;
+      display: grid;
+      grid-template-columns: 1fr 260px;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .axo-workspace { grid-template-columns: 1fr; }
+    }
+
+    /* ── Canvas card ── */
+    .axo-canvas-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .axo-canvas-header {
+      padding: .75rem 1.25rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .axo-canvas-header h3 { font-size: .95rem; font-weight: 600; }
+
+    .axo-canvas-body {
+      padding: 1.5rem;
+      min-height: 300px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .axo-placeholder-msg {
+      color: var(--text-muted);
+      font-size: .9rem;
+      text-align: center;
+    }
+
+    #axo-canvas {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      display: none;
+    }
+
+    /* ── Controls card ── */
+    .axo-controls {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+
+    .axo-controls h3 {
+      font-size: .95rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: .75rem;
+    }
+
+    .ctrl-group { display: flex; flex-direction: column; gap: .4rem; }
+
+    .ctrl-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: .82rem;
+      color: var(--text-muted);
+    }
+
+    .ctrl-label span.val {
+      font-size: .82rem;
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      width: 100%;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: 2px solid var(--bg);
+    }
+
+    .ctrl-segment {
+      display: flex;
+      gap: .5rem;
+    }
+
+    .seg-btn {
+      flex: 1;
+      padding: .4rem .5rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: .8rem;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, color .15s;
+    }
+
+    .seg-btn.active {
+      background: rgba(99,102,241,0.18);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .ctrl-color-row {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+
+    input[type="color"] {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      padding: 0;
+      background: none;
+    }
+
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: .85rem;
+      color: var(--text-muted);
+    }
+
+    /* Toggle switch */
+    .toggle {
+      position: relative;
+      width: 36px;
+      height: 20px;
+    }
+
+    .toggle input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-slider {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      background: var(--border);
+      cursor: pointer;
+      transition: background .2s;
+    }
+
+    .toggle-slider::before {
+      content: '';
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: white;
+      transition: transform .2s;
+    }
+
+    .toggle input:checked + .toggle-slider { background: var(--accent); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+    .divider { height: 1px; background: var(--border); }
+
+    /* ── Buttons ── */
+    .axo-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .5rem;
+      padding: .55rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .15s, filter .15s;
+    }
+
+    .axo-btn:disabled { opacity: .4; cursor: not-allowed; }
+    .axo-btn:not(:disabled):hover { filter: brightness(1.12); }
+
+    .axo-btn--primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .axo-btn--ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+    }
+
+    .axo-btn-group {
+      display: flex;
+      gap: .5rem;
+      flex-direction: column;
+    }
+
+    .axo-btn-group .axo-btn { justify-content: center; }
+
+    /* ── Nav back link ── */
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      font-size: .85rem;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: color .15s;
+    }
+
+    .back-link:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-brand">
+      <span class="header-icon">📐</span>
+      <div>
+        <h1>Screen to Axo Drawing</h1>
+        <p>Convert any screenshot into an isometric axonometric view</p>
+      </div>
+    </div>
+    <a href="/" class="back-link">← Back to Paper Detection</a>
+  </div>
+</header>
+
+<main>
+
+  <!-- Upload zone -->
+  <div class="axo-upload-wrap" id="upload-wrap">
+    <label class="axo-drop-zone" id="drop-zone">
+      <input type="file" id="file-input" accept="image/png,image/jpeg,image/webp,image/gif" />
+      <div class="axo-drop-icon">🖼️</div>
+      <p class="axo-drop-label">Drop a screenshot here or <span>click to browse</span></p>
+      <p class="axo-drop-hint">PNG, JPG, WebP, GIF — any screen size</p>
+    </label>
+  </div>
+
+  <!-- Workspace: canvas + controls (hidden until image loaded) -->
+  <div class="axo-workspace" id="workspace" style="display:none;">
+
+    <!-- Canvas panel -->
+    <div class="axo-canvas-card">
+      <div class="axo-canvas-header">
+        <h3>🖥️ Axonometric Preview</h3>
+        <span id="canvas-dims" style="font-size:.8rem;color:var(--text-muted);"></span>
+      </div>
+      <div class="axo-canvas-body">
+        <p class="axo-placeholder-msg" id="canvas-placeholder">Upload an image to begin</p>
+        <canvas id="axo-canvas"></canvas>
+      </div>
+    </div>
+
+    <!-- Controls panel -->
+    <div class="axo-controls">
+      <h3>Controls</h3>
+
+      <!-- Orientation -->
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span>Orientation</span></div>
+        <div class="ctrl-segment">
+          <button class="seg-btn active" data-orient="right">↗ Right</button>
+          <button class="seg-btn" data-orient="left">↖ Left</button>
+        </div>
+      </div>
+
+      <!-- Angle -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Tilt angle</span>
+          <span class="val" id="angle-val">30°</span>
+        </div>
+        <input type="range" id="angle" min="15" max="45" value="30" step="1" />
+      </div>
+
+      <!-- Depth -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Depth</span>
+          <span class="val" id="depth-val">40px</span>
+        </div>
+        <input type="range" id="depth" min="0" max="120" value="40" step="4" />
+      </div>
+
+      <!-- Bezel -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Bezel</span>
+          <span class="val" id="bezel-val">16px</span>
+        </div>
+        <input type="range" id="bezel" min="0" max="40" value="16" step="2" />
+      </div>
+
+      <!-- Max width -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Screen width</span>
+          <span class="val" id="maxw-val">640px</span>
+        </div>
+        <input type="range" id="maxw" min="200" max="900" value="640" step="20" />
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Device color -->
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span>Device color</span></div>
+        <div class="ctrl-color-row">
+          <input type="color" id="device-color" value="#1e1e2e" />
+          <span style="font-size:.82rem;color:var(--text-muted);">Bezel &amp; sides</span>
+        </div>
+      </div>
+
+      <!-- Background color -->
+      <div class="ctrl-group">
+        <div class="ctrl-label"><span>Background color</span></div>
+        <div class="ctrl-color-row">
+          <input type="color" id="bg-color" value="#0f1117" />
+          <span style="font-size:.82rem;color:var(--text-muted);">Canvas background</span>
+        </div>
+      </div>
+
+      <!-- Grid overlay -->
+      <div class="toggle-row">
+        <span>Grid overlay</span>
+        <label class="toggle">
+          <input type="checkbox" id="grid-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <!-- Glow -->
+      <div class="toggle-row">
+        <span>Screen glow</span>
+        <label class="toggle">
+          <input type="checkbox" id="glow-toggle" checked />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="axo-btn-group">
+        <button class="axo-btn axo-btn--primary" id="download-btn" disabled>
+          ⬇ Download PNG
+        </button>
+        <button class="axo-btn axo-btn--ghost" id="copy-btn" disabled>
+          📋 Copy to clipboard
+        </button>
+        <button class="axo-btn axo-btn--ghost" id="reset-btn">
+          ↺ Upload new image
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+</main>
+
+<script src="axo.js"></script>
+</body>
+</html>
