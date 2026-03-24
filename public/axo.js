@@ -588,7 +588,7 @@ function drawAxo(cv, layers, opts) {
   // ── Blit offscreen onto cv with rotation applied ──
   const rotRad = rotation * Math.PI / 180;
   // Compute tight bounding box of the rotated rectangle
-  const corners = [
+  const rotCorners = [
     [0,      0],
     [baseW,  0],
     [baseW,  baseH],
@@ -597,8 +597,8 @@ function drawAxo(cv, layers, opts) {
     x * Math.cos(rotRad) - y * Math.sin(rotRad),
     x * Math.sin(rotRad) + y * Math.cos(rotRad),
   ]);
-  const xs = corners.map(c => c[0]);
-  const ys = corners.map(c => c[1]);
+  const xs = rotCorners.map(c => c[0]);
+  const ys = rotCorners.map(c => c[1]);
   const minX = Math.min(...xs), maxX = Math.max(...xs);
   const minY = Math.min(...ys), maxY = Math.max(...ys);
   const cvW = Math.ceil(maxX - minX);
