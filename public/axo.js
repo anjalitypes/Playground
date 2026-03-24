@@ -134,8 +134,9 @@ const state = {
     rotation:   0,
     layerColor: '#2a2a3a',
     bgColor:    '#0a0a0f',
-    grid:       false,
-    glow:       true,
+    grid:        false,
+    glow:        true,
+    transparent: false,
   }
 };
 
@@ -162,8 +163,9 @@ const edgeSlider   = document.getElementById('edge');
 const maxwSlider   = document.getElementById('maxw');
 const layerColorIn = document.getElementById('layer-color');
 const bgColorIn    = document.getElementById('bg-color');
-const gridToggle   = document.getElementById('grid-toggle');
-const glowToggle   = document.getElementById('glow-toggle');
+const gridToggle        = document.getElementById('grid-toggle');
+const glowToggle        = document.getElementById('glow-toggle');
+const transparentToggle = document.getElementById('transparent-toggle');
 const angleVal     = document.getElementById('angle-val');
 const gapVal       = document.getElementById('gap-val');
 const edgeVal      = document.getElementById('edge-val');
@@ -361,7 +363,8 @@ bindSlider(maxwSlider,  'maxW',     'px', maxwVal);
 layerColorIn.addEventListener('input', () => { state.options.layerColor = layerColorIn.value; render(); });
 bgColorIn.addEventListener('input',    () => { state.options.bgColor    = bgColorIn.value;    render(); });
 gridToggle.addEventListener('change',  () => { state.options.grid       = gridToggle.checked; render(); });
-glowToggle.addEventListener('change',  () => { state.options.glow       = glowToggle.checked; render(); });
+glowToggle.addEventListener('change',        () => { state.options.glow        = glowToggle.checked;        render(); });
+transparentToggle.addEventListener('change', () => { state.options.transparent = transparentToggle.checked; render(); });
 
 // ── Rotation dial ─────────────────────────────────────────
 const dial = new RotationDial(dialCanvas, angle => {
@@ -453,7 +456,7 @@ function drawAxo(cv, layers, opts) {
   const numLayers = layers.length;
   const {
     angle, layerGap, edgeH, maxW, rotation,
-    layerColor, bgColor, grid, glow,
+    layerColor, bgColor, grid, glow, transparent,
   } = opts;
 
   const rad  = angle * Math.PI / 180;
@@ -484,8 +487,10 @@ function drawAxo(cv, layers, opts) {
   ctx.clearRect(0, 0, baseW, baseH);
 
   // ── Background ──
-  ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, baseW, baseH);
+  if (!transparent) {
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, baseW, baseH);
+  }
 
   // Helper: transform image-space point for layer i
   const tp = (i, x, y) => {
@@ -605,8 +610,10 @@ function drawAxo(cv, layers, opts) {
   cv.height = cvH;
 
   const mainCtx = cv.getContext('2d');
-  mainCtx.fillStyle = bgColor;
-  mainCtx.fillRect(0, 0, cvW, cvH);
+  if (!transparent) {
+    mainCtx.fillStyle = bgColor;
+    mainCtx.fillRect(0, 0, cvW, cvH);
+  }
   mainCtx.save();
   mainCtx.translate(cvW / 2, cvH / 2);
   mainCtx.rotate(rotRad);
