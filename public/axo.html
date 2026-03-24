@@ -290,6 +290,49 @@
 
     .layer-remove:hover { background: rgba(255,77,77,0.2); color: #ff4d4d; }
 
+    .shadow-controls {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      margin-top: .3rem;
+    }
+
+    .shadow-row {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+    }
+
+    .shadow-row label {
+      font-size: .75rem;
+      color: var(--text-muted);
+      width: 46px;
+      flex-shrink: 0;
+    }
+
+    .shadow-row input[type=range] {
+      flex: 1;
+    }
+
+    .shadow-row input[type=color] {
+      width: 32px;
+      height: 22px;
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      background: none;
+      cursor: pointer;
+    }
+
+    .shadow-row .val {
+      font-size: .75rem;
+      color: var(--text-muted);
+      width: 34px;
+      text-align: right;
+      flex-shrink: 0;
+    }
+
+    .shadow-row input:disabled { opacity: .35; pointer-events: none; }
+
     .layer-empty {
       font-size: .8rem;
       color: var(--text-muted);
@@ -528,6 +571,15 @@
         <input type="range" id="edge" min="0" max="20" value="6" step="1" />
       </div>
 
+      <!-- Corner radius -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Corner radius</span>
+          <span class="val" id="corner-radius-val">0px</span>
+        </div>
+        <input type="range" id="corner-radius" min="0" max="80" value="0" step="1" />
+      </div>
+
       <!-- Max width -->
       <div class="ctrl-group">
         <div class="ctrl-label">
@@ -561,6 +613,43 @@
       <div class="toggle-row">
         <label for="transparent-toggle">Transparent background</label>
         <input type="checkbox" id="transparent-toggle" />
+      </div>
+
+      <!-- Layer drop shadow -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Layer drop shadow</span>
+          <label class="toggle">
+            <input type="checkbox" id="shadow-toggle" />
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+        <div class="shadow-controls" id="shadow-controls">
+          <div class="shadow-row">
+            <label>Color</label>
+            <input type="color" id="shadow-color" value="#000000" disabled />
+          </div>
+          <div class="shadow-row">
+            <label>Opacity</label>
+            <input type="range" id="shadow-opacity" min="0" max="1" step="0.01" value="0.45" disabled />
+            <span class="val" id="shadow-opacity-val">0.45</span>
+          </div>
+          <div class="shadow-row">
+            <label>X</label>
+            <input type="range" id="shadow-x" min="-60" max="60" step="1" value="0" disabled />
+            <span class="val" id="shadow-x-val">0px</span>
+          </div>
+          <div class="shadow-row">
+            <label>Y</label>
+            <input type="range" id="shadow-y" min="-60" max="60" step="1" value="12" disabled />
+            <span class="val" id="shadow-y-val">12px</span>
+          </div>
+          <div class="shadow-row">
+            <label>Blur</label>
+            <input type="range" id="shadow-blur" min="0" max="80" step="1" value="24" disabled />
+            <span class="val" id="shadow-blur-val">24px</span>
+          </div>
+        </div>
       </div>
 
       <!-- Grid overlay -->

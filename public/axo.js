@@ -134,9 +134,18 @@ const state = {
     rotation:   0,
     layerColor: '#2a2a3a',
     bgColor:    '#0a0a0f',
-    grid:        false,
-    glow:        true,
-    transparent: false,
+    grid:         false,
+    glow:         true,
+    transparent:  false,
+    cornerRadius: 0,
+    layerShadow: {
+      enabled: false,
+      color:   '#000000',
+      opacity: 0.45,
+      x:       0,
+      y:       12,
+      blur:    24,
+    },
   }
 };
 
@@ -166,6 +175,18 @@ const bgColorIn    = document.getElementById('bg-color');
 const gridToggle        = document.getElementById('grid-toggle');
 const glowToggle        = document.getElementById('glow-toggle');
 const transparentToggle = document.getElementById('transparent-toggle');
+const cornerRadiusSlider = document.getElementById('corner-radius');
+const cornerRadiusVal    = document.getElementById('corner-radius-val');
+const shadowToggle       = document.getElementById('shadow-toggle');
+const shadowColorIn      = document.getElementById('shadow-color');
+const shadowOpacitySlider= document.getElementById('shadow-opacity');
+const shadowOpacityVal   = document.getElementById('shadow-opacity-val');
+const shadowXSlider      = document.getElementById('shadow-x');
+const shadowXVal         = document.getElementById('shadow-x-val');
+const shadowYSlider      = document.getElementById('shadow-y');
+const shadowYVal         = document.getElementById('shadow-y-val');
+const shadowBlurSlider   = document.getElementById('shadow-blur');
+const shadowBlurVal      = document.getElementById('shadow-blur-val');
 const angleVal     = document.getElementById('angle-val');
 const gapVal       = document.getElementById('gap-val');
 const edgeVal      = document.getElementById('edge-val');
@@ -366,6 +387,45 @@ gridToggle.addEventListener('change',  () => { state.options.grid       = gridTo
 glowToggle.addEventListener('change',        () => { state.options.glow        = glowToggle.checked;        render(); });
 transparentToggle.addEventListener('change', () => { state.options.transparent = transparentToggle.checked; render(); });
 
+cornerRadiusSlider.addEventListener('input', () => {
+  state.options.cornerRadius = +cornerRadiusSlider.value;
+  cornerRadiusVal.textContent = cornerRadiusSlider.value + 'px';
+  render();
+});
+
+function syncShadowControls() {
+  const on = state.options.layerShadow.enabled;
+  [shadowColorIn, shadowOpacitySlider, shadowXSlider, shadowYSlider, shadowBlurSlider]
+    .forEach(el => el.disabled = !on);
+}
+shadowToggle.addEventListener('change', () => {
+  state.options.layerShadow.enabled = shadowToggle.checked;
+  syncShadowControls();
+  render();
+});
+shadowColorIn.addEventListener('input', () => { state.options.layerShadow.color = shadowColorIn.value; render(); });
+shadowOpacitySlider.addEventListener('input', () => {
+  state.options.layerShadow.opacity = +shadowOpacitySlider.value;
+  shadowOpacityVal.textContent = shadowOpacitySlider.value;
+  render();
+});
+shadowXSlider.addEventListener('input', () => {
+  state.options.layerShadow.x = +shadowXSlider.value;
+  shadowXVal.textContent = shadowXSlider.value + 'px';
+  render();
+});
+shadowYSlider.addEventListener('input', () => {
+  state.options.layerShadow.y = +shadowYSlider.value;
+  shadowYVal.textContent = shadowYSlider.value + 'px';
+  render();
+});
+shadowBlurSlider.addEventListener('input', () => {
+  state.options.layerShadow.blur = +shadowBlurSlider.value;
+  shadowBlurVal.textContent = shadowBlurSlider.value + 'px';
+  render();
+});
+syncShadowControls();
+
 // ── Rotation dial ─────────────────────────────────────────
 const dial = new RotationDial(dialCanvas, angle => {
   state.options.rotation = angle;
@@ -457,6 +517,7 @@ function drawAxo(cv, layers, opts) {
   const {
     angle, layerGap, edgeH, maxW, rotation,
     layerColor, bgColor, grid, glow, transparent,
+    cornerRadius, layerShadow,
   } = opts;
 
   const rad  = angle * Math.PI / 180;
@@ -539,9 +600,24 @@ function drawAxo(cv, layers, opts) {
       ctx.restore();
     }
 
+    const cr = cornerRadius || 0;
+
+    // Configurable layer drop shadow
+    if (layerShadow.enabled) {
+      ctx.save();
+      ctx.shadowColor   = hexToRgba(layerShadow.color, layerShadow.opacity);
+      ctx.shadowBlur    = layerShadow.blur;
+      ctx.shadowOffsetX = layerShadow.x;
+      ctx.shadowOffsetY = layerShadow.y;
+      polyPath(ctx, [TL, TR, BR, BL], cr);
+      ctx.fillStyle = 'rgba(0,0,0,0.01)';
+      ctx.fill();
+      ctx.restore();
+    }
+
     // Fill face with white first so transparent image pixels don't bleed through
     ctx.save();
-    clipPoly(ctx, [TL, TR, BR, BL]);
+    clipPoly(ctx, [TL, TR, BR, BL], cr);
     fillPoly(ctx, [TL, TR, BR, BL], '#ffffff');
     ctx.restore();
 
@@ -550,7 +626,7 @@ function drawAxo(cv, layers, opts) {
       const tmp = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
       const tc = tmp.getContext('2d');
       tc.save();
-      clipPoly(tc, [TL, TR, BR, BL]);
+      clipPoly(tc, [TL, TR, BR, BL], cr);
       tc.setTransform(cosA, sinA, 0, 1, lox, loy - H);
       tc.drawImage(layers[i].img, 0, 0, W, H);
       tc.restore();
@@ -563,7 +639,7 @@ function drawAxo(cv, layers, opts) {
       ctx.drawImage(tmp, 0, 0);
     } else {
       ctx.save();
-      clipPoly(ctx, [TL, TR, BR, BL]);
+      clipPoly(ctx, [TL, TR, BR, BL], cr);
       ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
       ctx.drawImage(layers[i].img, 0, 0, W, H);
       ctx.restore();
@@ -655,12 +731,41 @@ function strokePoly(ctx, pts, style, lw) {
   ctx.stroke();
 }
 
-function clipPoly(ctx, pts) {
-  ctx.beginPath();
-  ctx.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-  ctx.closePath();
+function clipPoly(ctx, pts, r = 0) {
+  polyPath(ctx, pts, r);
   ctx.clip();
+}
+
+function polyPath(ctx, pts, r = 0) {
+  const n = pts.length;
+  ctx.beginPath();
+  if (!r) {
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (let i = 1; i < n; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+  } else {
+    for (let i = 0; i < n; i++) {
+      const prev = pts[(i - 1 + n) % n];
+      const curr = pts[i];
+      const next = pts[(i + 1) % n];
+      const dx1 = prev[0] - curr[0], dy1 = prev[1] - curr[1];
+      const dx2 = next[0] - curr[0], dy2 = next[1] - curr[1];
+      const len1 = Math.hypot(dx1, dy1), len2 = Math.hypot(dx2, dy2);
+      const cr = Math.min(r, len1 / 2, len2 / 2);
+      const sx = curr[0] + (dx1 / len1) * cr, sy = curr[1] + (dy1 / len1) * cr;
+      const ex = curr[0] + (dx2 / len2) * cr, ey = curr[1] + (dy2 / len2) * cr;
+      if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+      ctx.quadraticCurveTo(curr[0], curr[1], ex, ey);
+    }
+  }
+  ctx.closePath();
+}
+
+function hexToRgba(hex, opacity) {
+  const c = hex.replace('#', '');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${opacity})`;
 }
 
 function shadeHex(hex, frac) {
