@@ -540,6 +540,15 @@ function drawAxo(cv, layers, opts) {
     const lox = ox + i * dX;
     const loy = oy - i * dY;
 
+    // Per-layer drop shadow (cast onto layers below)
+    ctx.save();
+    ctx.shadowColor   = 'rgba(0,0,0,0.15)';
+    ctx.shadowBlur    = 4;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 2;
+    fillPoly(ctx, [TL, TR, BR, BL], 'rgba(0,0,0,0.01)');
+    ctx.restore();
+
     if (i === 0 && glow) {
       // Composite glow only over actual image pixels using a temp canvas
       const tmp = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
@@ -561,15 +570,6 @@ function drawAxo(cv, layers, opts) {
       clipPoly(ctx, [TL, TR, BR, BL]);
       ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
       ctx.drawImage(layers[i].img, 0, 0, W, H);
-      ctx.restore();
-    }
-
-    // Darken back layers
-    if (i > 0) {
-      const alpha = Math.min(0.55, i * 0.2);
-      ctx.save();
-      clipPoly(ctx, [TL, TR, BR, BL]);
-      fillPoly(ctx, [TL, TR, BR, BL], `rgba(0,0,0,${alpha})`);
       ctx.restore();
     }
 
