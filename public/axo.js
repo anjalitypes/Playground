@@ -138,6 +138,7 @@ const state = {
     glow:         true,
     transparent:  false,
     cornerRadius: 0,
+    flipSide:     false,
     layerShadow: {
       enabled: false,
       color:   '#000000',
@@ -177,6 +178,7 @@ const glowToggle        = document.getElementById('glow-toggle');
 const transparentToggle = document.getElementById('transparent-toggle');
 const cornerRadiusSlider = document.getElementById('corner-radius');
 const cornerRadiusVal    = document.getElementById('corner-radius-val');
+const flipSideToggle     = document.getElementById('flip-side-toggle');
 const shadowToggle       = document.getElementById('shadow-toggle');
 const shadowColorIn      = document.getElementById('shadow-color');
 const shadowOpacitySlider= document.getElementById('shadow-opacity');
@@ -393,6 +395,8 @@ cornerRadiusSlider.addEventListener('input', () => {
   render();
 });
 
+flipSideToggle.addEventListener('change', () => { state.options.flipSide = flipSideToggle.checked; render(); });
+
 function syncShadowControls() {
   const on = state.options.layerShadow.enabled;
   [shadowColorIn, shadowOpacitySlider, shadowXSlider, shadowYSlider, shadowBlurSlider]
@@ -517,12 +521,13 @@ function drawAxo(cv, layers, opts) {
   const {
     angle, layerGap, edgeH, maxW, rotation,
     layerColor, bgColor, grid, glow, transparent,
-    cornerRadius, layerShadow,
+    cornerRadius, flipSide, layerShadow,
   } = opts;
 
-  const rad  = angle * Math.PI / 180;
-  const cosA = Math.cos(rad);
-  const sinA = Math.sin(rad);
+  const rad   = angle * Math.PI / 180;
+  const cosA  = Math.cos(rad);
+  const sinAbs = Math.sin(rad);
+  const sinA  = flipSide ? -sinAbs : sinAbs;
 
   // Scale image to fit maxW
   const scale = Math.min(1, maxW / img.naturalWidth);
@@ -530,16 +535,18 @@ function drawAxo(cv, layers, opts) {
   const H = img.naturalHeight * scale;
 
   const dX = layerGap * cosA;
-  const dY = layerGap * sinA;
+  const dY = layerGap * sinAbs; // always positive — layers always stack upward
 
   const padX = 50;
   const padY = 50;
 
-  const oy = padY + H + (numLayers - 1) * dY;
+  // When flipped, the parallelogram extends upward on the right by sinAbs*W,
+  // so oy must be larger to keep it within the canvas.
+  const oy = padY + H + (flipSide ? sinAbs * W : 0) + (numLayers - 1) * dY;
   const ox = padX;
 
   const baseW = Math.ceil(ox + W * cosA + (numLayers - 1) * dX + padX + edgeH);
-  const baseH = Math.ceil(oy + W * sinA + edgeH + padY);
+  const baseH = Math.ceil(oy + (flipSide ? 0 : W * sinAbs) + edgeH + padY);
 
   // Always draw into an offscreen canvas, then rotate onto cv
   const off = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
@@ -614,12 +621,6 @@ function drawAxo(cv, layers, opts) {
       ctx.fill();
       ctx.restore();
     }
-
-    // Fill face with white first so transparent image pixels don't bleed through
-    ctx.save();
-    clipPoly(ctx, [TL, TR, BR, BL], cr);
-    fillPoly(ctx, [TL, TR, BR, BL], '#ffffff');
-    ctx.restore();
 
     if (i === 0 && glow) {
       // Composite glow only over actual image pixels using a temp canvas
