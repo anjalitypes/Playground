@@ -526,27 +526,30 @@ function drawAxo(cv, layers, opts) {
 
   const rad   = angle * Math.PI / 180;
   const cosA  = Math.cos(rad);
-  const sinAbs = Math.sin(rad);
-  const sinA  = flipSide ? -sinAbs : sinAbs;
+  const sinA  = Math.sin(rad); // always positive
+
+  // When flipped, the horizontal skew direction is negated so layers stack
+  // upper-left instead of upper-right.
+  const cosA_s = flipSide ? -cosA : cosA;
 
   // Scale image to fit maxW
   const scale = Math.min(1, maxW / img.naturalWidth);
   const W = img.naturalWidth  * scale;
   const H = img.naturalHeight * scale;
 
-  const dX = layerGap * cosA;
-  const dY = layerGap * sinAbs; // always positive — layers always stack upward
+  const dX = layerGap * cosA_s; // negative when flipped
+  const dY = layerGap * sinA;   // always positive
 
   const padX = 50;
   const padY = 50;
 
-  // When flipped, the parallelogram extends upward on the right by sinAbs*W,
-  // so oy must be larger to keep it within the canvas.
-  const oy = padY + H + (flipSide ? sinAbs * W : 0) + (numLayers - 1) * dY;
-  const ox = padX;
+  // When flipped ox shifts right so the composition still fits within bounds.
+  const ox = flipSide ? padX + cosA * W + (numLayers - 1) * layerGap * cosA : padX;
+  const oy = padY + H + (numLayers - 1) * dY;
 
-  const baseW = Math.ceil(ox + W * cosA + (numLayers - 1) * dX + padX + edgeH);
-  const baseH = Math.ceil(oy + (flipSide ? 0 : W * sinAbs) + edgeH + padY);
+  // baseW/baseH are identical for normal and flipped (same bounding box size).
+  const baseW = Math.ceil(padX + cosA * W + (numLayers - 1) * layerGap * cosA + padX + edgeH);
+  const baseH = Math.ceil(oy + W * sinA + edgeH + padY);
 
   // Always draw into an offscreen canvas, then rotate onto cv
   const off = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
@@ -564,8 +567,15 @@ function drawAxo(cv, layers, opts) {
   const tp = (i, x, y) => {
     const lox = ox + i * dX;
     const loy = oy - i * dY;
-    return [cosA * x + lox, sinA * x + y + loy - H];
+    return [cosA_s * x + lox, sinA * x + y + loy - H];
   };
+
+  // setTransform args for drawing an image into its layer parallelogram.
+  // When flipped: negate the skew so image pixels map to the correct corners
+  // without horizontally mirroring the image content.
+  const imgXform = (lox, loy) => flipSide
+    ? [cosA, -sinA, 0, 1, lox - cosA * W, loy - H + sinA * W]
+    : [cosA,  sinA, 0, 1, lox,            loy - H];
 
   // Precompute corners for all layers
   const corners = [];
@@ -628,7 +638,7 @@ function drawAxo(cv, layers, opts) {
       const tc = tmp.getContext('2d');
       tc.save();
       clipPoly(tc, [TL, TR, BR, BL], cr);
-      tc.setTransform(cosA, sinA, 0, 1, lox, loy - H);
+      tc.setTransform(...imgXform(lox, loy));
       tc.drawImage(layers[i].img, 0, 0, W, H);
       tc.restore();
       tc.globalCompositeOperation = 'source-atop';
@@ -641,14 +651,14 @@ function drawAxo(cv, layers, opts) {
     } else {
       ctx.save();
       clipPoly(ctx, [TL, TR, BR, BL], cr);
-      ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
+      ctx.setTransform(...imgXform(lox, loy));
       ctx.drawImage(layers[i].img, 0, 0, W, H);
       ctx.restore();
     }
 
     // Grid on front layer only
     if (i === 0 && grid) {
-      drawGrid(ctx, lox, loy, W, H, cosA, sinA);
+      drawGrid(ctx, lox, loy, W, H, cosA_s, sinA);
     }
 
   }
