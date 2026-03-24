@@ -181,7 +181,7 @@ function newLayerObj(img = null, name = null) {
 }
 
 function addLayer(img = null) {
-  state.layers.push(newLayerObj(img));
+  state.layers.unshift(newLayerObj(img));
   syncWorkspace();
   renderLayerList();
   render();
