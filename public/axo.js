@@ -544,7 +544,7 @@ function drawAxo(cv, layers, opts) {
     if (i < 2) {
       ctx.save();
       ctx.shadowColor   = 'rgba(0,0,0,0.15)';
-      ctx.shadowBlur    = 4;
+      ctx.shadowBlur    = 15;
       ctx.shadowOffsetX = 0;
       ctx.shadowOffsetY = 2;
       fillPoly(ctx, [TL, TR, BR, BL], 'rgba(0,0,0,0.01)');
