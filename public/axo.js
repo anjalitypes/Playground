@@ -5,6 +5,122 @@
 
 'use strict';
 
+// ── Rotation Dial ─────────────────────────────────────────
+// Must be defined before use — classes are not hoisted.
+
+class RotationDial {
+  constructor(cv, onChange) {
+    this.cv       = cv;
+    this.ctx      = cv.getContext('2d');
+    this.angle    = 0;
+    this.onChange = onChange;
+    this.dragging = false;
+    this.lastAngle = null;
+
+    cv.addEventListener('mousedown',  e => this._down(e));
+    cv.addEventListener('touchstart', e => this._down(e), { passive: false });
+    window.addEventListener('mousemove',  e => this._move(e));
+    window.addEventListener('touchmove',  e => this._move(e), { passive: false });
+    window.addEventListener('mouseup',    () => this._up());
+    window.addEventListener('touchend',   () => this._up());
+
+    this._draw();
+  }
+
+  _clientXY(e) {
+    return e.touches
+      ? [e.touches[0].clientX, e.touches[0].clientY]
+      : [e.clientX, e.clientY];
+  }
+
+  _angleFromEvent(e) {
+    const rect = this.cv.getBoundingClientRect();
+    const [cx, cy] = [rect.left + rect.width / 2, rect.top + rect.height / 2];
+    const [mx, my] = this._clientXY(e);
+    return ((Math.atan2(my - cy, mx - cx) * 180 / Math.PI) + 90 + 360) % 360;
+  }
+
+  _down(e) {
+    this.dragging  = true;
+    this.lastAngle = this._angleFromEvent(e);
+    e.preventDefault();
+  }
+
+  _move(e) {
+    if (!this.dragging) return;
+    const next = this._angleFromEvent(e);
+    let delta = next - this.lastAngle;
+    if (delta >  180) delta -= 360;
+    if (delta < -180) delta += 360;
+    this.angle = (this.angle + delta + 360) % 360;
+    this.lastAngle = next;
+    this._draw();
+    this.onChange(this.angle);
+    e.preventDefault();
+  }
+
+  _up() { this.dragging = false; }
+
+  _draw() {
+    const { cv, ctx, angle } = this;
+    const size = cv.width;
+    const cx   = size / 2;
+    const cy   = size / 2;
+    const r    = size / 2 - 3;
+
+    ctx.clearRect(0, 0, size, size);
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#2a2d45';
+    ctx.lineWidth   = 2;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1d2e';
+    ctx.fill();
+
+    for (let a = 0; a < 360; a += 45) {
+      const rad = (a - 90) * Math.PI / 180;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(rad) * (r - 5), cy + Math.sin(rad) * (r - 5));
+      ctx.lineTo(cx + Math.cos(rad) * r,        cy + Math.sin(rad) * r);
+      ctx.strokeStyle = '#3a3d5a';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    }
+
+    if (angle > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 1, -Math.PI / 2, (angle - 90) * Math.PI / 180);
+      ctx.strokeStyle = 'rgba(99,102,241,0.35)';
+      ctx.lineWidth   = 3;
+      ctx.stroke();
+    }
+
+    const rad     = (angle - 90) * Math.PI / 180;
+    const dotDist = r - 7;
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(rad) * dotDist, cy + Math.sin(rad) * dotDist);
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(rad) * dotDist, cy + Math.sin(rad) * dotDist, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+  }
+}
+
 // ── State ──────────────────────────────────────────────────
 const state = {
   img: null,
@@ -402,127 +518,3 @@ function shadeHex(hex, frac) {
 
 function clamp(v) { return Math.max(0, Math.min(255, v)); }
 
-// ── Rotation Dial ─────────────────────────────────────────
-// Canvas-based drag-to-rotate knob control.
-
-class RotationDial {
-  constructor(cv, onChange) {
-    this.cv       = cv;
-    this.ctx      = cv.getContext('2d');
-    this.angle    = 0;      // degrees
-    this.onChange = onChange;
-    this.dragging = false;
-    this.lastAngle = null;
-
-    cv.addEventListener('mousedown',  e => this._down(e));
-    cv.addEventListener('touchstart', e => this._down(e), { passive: false });
-    window.addEventListener('mousemove',  e => this._move(e));
-    window.addEventListener('touchmove',  e => this._move(e), { passive: false });
-    window.addEventListener('mouseup',    () => this._up());
-    window.addEventListener('touchend',   () => this._up());
-
-    this._draw();
-  }
-
-  _clientXY(e) {
-    return e.touches
-      ? [e.touches[0].clientX, e.touches[0].clientY]
-      : [e.clientX, e.clientY];
-  }
-
-  _angleFromEvent(e) {
-    const rect = this.cv.getBoundingClientRect();
-    const [cx, cy] = [rect.left + rect.width / 2, rect.top + rect.height / 2];
-    const [mx, my] = this._clientXY(e);
-    // atan2 gives angle from +x axis; offset by -90° so 0° is top
-    return ((Math.atan2(my - cy, mx - cx) * 180 / Math.PI) + 90 + 360) % 360;
-  }
-
-  _down(e) {
-    this.dragging  = true;
-    this.lastAngle = this._angleFromEvent(e);
-    e.preventDefault();
-  }
-
-  _move(e) {
-    if (!this.dragging) return;
-    const next = this._angleFromEvent(e);
-    let delta = next - this.lastAngle;
-    // Handle wrap-around
-    if (delta >  180) delta -= 360;
-    if (delta < -180) delta += 360;
-    this.angle = (this.angle + delta + 360) % 360;
-    this.lastAngle = next;
-    this._draw();
-    this.onChange(this.angle);
-    e.preventDefault();
-  }
-
-  _up() { this.dragging = false; }
-
-  _draw() {
-    const { cv, ctx, angle } = this;
-    const size = cv.width;
-    const cx   = size / 2;
-    const cy   = size / 2;
-    const r    = size / 2 - 3;
-
-    ctx.clearRect(0, 0, size, size);
-
-    // Track ring
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.strokeStyle = '#2a2d45';
-    ctx.lineWidth   = 2;
-    ctx.stroke();
-
-    // Filled disc
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.fillStyle = '#1a1d2e';
-    ctx.fill();
-
-    // Tick marks every 45°
-    for (let a = 0; a < 360; a += 45) {
-      const rad   = (a - 90) * Math.PI / 180;
-      const inner = r - 5;
-      ctx.beginPath();
-      ctx.moveTo(cx + Math.cos(rad) * inner, cy + Math.sin(rad) * inner);
-      ctx.lineTo(cx + Math.cos(rad) * r,     cy + Math.sin(rad) * r);
-      ctx.strokeStyle = '#3a3d5a';
-      ctx.lineWidth   = 1;
-      ctx.stroke();
-    }
-
-    // Filled arc showing progress from 0 to current angle
-    if (angle > 0) {
-      ctx.beginPath();
-      ctx.arc(cx, cy, r - 1, -Math.PI / 2, (angle - 90) * Math.PI / 180);
-      ctx.strokeStyle = 'rgba(99,102,241,0.35)';
-      ctx.lineWidth   = 3;
-      ctx.stroke();
-    }
-
-    // Indicator line
-    const rad    = (angle - 90) * Math.PI / 180;
-    const dotDist = r - 7;
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + Math.cos(rad) * dotDist, cy + Math.sin(rad) * dotDist);
-    ctx.strokeStyle = '#6366f1';
-    ctx.lineWidth   = 1.5;
-    ctx.stroke();
-
-    // Indicator dot
-    ctx.beginPath();
-    ctx.arc(cx + Math.cos(rad) * dotDist, cy + Math.sin(rad) * dotDist, 4, 0, Math.PI * 2);
-    ctx.fillStyle = '#6366f1';
-    ctx.fill();
-
-    // Centre dot
-    ctx.beginPath();
-    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
-    ctx.fillStyle = '#6366f1';
-    ctx.fill();
-  }
-}
