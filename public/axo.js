@@ -540,11 +540,29 @@ function drawAxo(cv, layers, opts) {
     const lox = ox + i * dX;
     const loy = oy - i * dY;
 
-    ctx.save();
-    clipPoly(ctx, [TL, TR, BR, BL]);
-    ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
-    ctx.drawImage(layers[i].img, 0, 0, W, H);
-    ctx.restore();
+    if (i === 0 && glow) {
+      // Composite glow only over actual image pixels using a temp canvas
+      const tmp = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
+      const tc = tmp.getContext('2d');
+      tc.save();
+      clipPoly(tc, [TL, TR, BR, BL]);
+      tc.setTransform(cosA, sinA, 0, 1, lox, loy - H);
+      tc.drawImage(layers[i].img, 0, 0, W, H);
+      tc.restore();
+      tc.globalCompositeOperation = 'source-atop';
+      const g = tc.createLinearGradient(TL[0], TL[1], BL[0], BL[1]);
+      g.addColorStop(0,   'rgba(255,255,255,0.08)');
+      g.addColorStop(0.35,'rgba(255,255,255,0.01)');
+      g.addColorStop(1,   'rgba(0,0,0,0.1)');
+      fillPoly(tc, [TL, TR, BR, BL], g);
+      ctx.drawImage(tmp, 0, 0);
+    } else {
+      ctx.save();
+      clipPoly(ctx, [TL, TR, BR, BL]);
+      ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
+      ctx.drawImage(layers[i].img, 0, 0, W, H);
+      ctx.restore();
+    }
 
     // Darken back layers
     if (i > 0) {
@@ -555,26 +573,11 @@ function drawAxo(cv, layers, opts) {
       ctx.restore();
     }
 
-    // Glow on front layer only
-    if (i === 0 && glow) {
-      ctx.save();
-      clipPoly(ctx, [TL, TR, BR, BL]);
-      const g = ctx.createLinearGradient(TL[0], TL[1], BL[0], BL[1]);
-      g.addColorStop(0,   'rgba(255,255,255,0.08)');
-      g.addColorStop(0.35,'rgba(255,255,255,0.01)');
-      g.addColorStop(1,   'rgba(0,0,0,0.1)');
-      fillPoly(ctx, [TL, TR, BR, BL], g);
-      ctx.restore();
-    }
-
     // Grid on front layer only
     if (i === 0 && grid) {
       drawGrid(ctx, lox, loy, W, H, cosA, sinA);
     }
 
-    // Outline
-    const outlineAlpha = i === 0 ? 0.25 : 0.12;
-    strokePoly(ctx, [TL, TR, BR, BL], `rgba(255,255,255,${outlineAlpha})`, 1);
   }
 
   // ── Blit offscreen onto cv with rotation applied ──
