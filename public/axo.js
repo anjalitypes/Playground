@@ -465,8 +465,8 @@ function drawAxo(cv, layers, opts) {
   const W = img.naturalWidth  * scale;
   const H = img.naturalHeight * scale;
 
-  const dX = layerGap * cosA;
-  const dY = layerGap * sinA;
+  const dX = 0;
+  const dY = layerGap;
 
   const padX = 50;
   const padY = 50;
