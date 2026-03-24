@@ -588,6 +588,12 @@ function drawAxo(cv, layers, opts) {
 
     const lr = layers[i].radius || 0;
 
+    // Fill face with white first so transparent image pixels don't bleed through
+    ctx.save();
+    clipPoly(ctx, [TL, TR, BR, BL], lr);
+    fillPoly(ctx, [TL, TR, BR, BL], '#ffffff');
+    ctx.restore();
+
     if (i === 0 && glow) {
       // Composite glow only over actual image pixels using a temp canvas
       const tmp = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
