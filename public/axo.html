@@ -173,6 +173,138 @@
       border: 2px solid var(--bg);
     }
 
+    /* ── Layer panel ── */
+    .layers-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .add-layer-btn {
+      padding: .22rem .6rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: transparent;
+      color: var(--accent);
+      font-size: .78rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+
+    .add-layer-btn:hover {
+      background: rgba(99,102,241,0.15);
+      border-color: var(--accent);
+    }
+
+    .layer-list {
+      display: flex;
+      flex-direction: column;
+      gap: .35rem;
+      min-height: 36px;
+    }
+
+    .layer-item {
+      display: flex;
+      align-items: center;
+      gap: .45rem;
+      padding: .35rem .45rem;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg-card2);
+      transition: border-color .15s, opacity .15s, background .15s;
+      user-select: none;
+    }
+
+    .layer-item.dragging  { opacity: .35; }
+    .layer-item.drag-over { border-color: var(--accent); background: rgba(99,102,241,0.1); }
+
+    .drag-handle {
+      cursor: grab;
+      color: var(--border);
+      font-size: .95rem;
+      padding: 0 .15rem;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .drag-handle:active { cursor: grabbing; }
+
+    .layer-thumb-wrap {
+      position: relative;
+      width: 46px;
+      height: 32px;
+      flex-shrink: 0;
+      cursor: pointer;
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: var(--bg);
+    }
+
+    .layer-thumb {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .layer-thumb-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(99,102,241,0.75);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: .85rem;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+
+    .layer-thumb-wrap:hover .layer-thumb-overlay { opacity: 1; }
+
+    .layer-name {
+      flex: 1;
+      font-size: .8rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .layer-remove {
+      width: 20px;
+      height: 20px;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: .7rem;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background .15s, color .15s;
+    }
+
+    .layer-remove:hover { background: rgba(255,77,77,0.2); color: #ff4d4d; }
+
+    .layer-empty {
+      font-size: .8rem;
+      color: var(--text-muted);
+      text-align: center;
+      padding: .6rem;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+    }
+
+    .ctrl-hint {
+      font-size: .73rem;
+      color: var(--text-muted);
+      margin-top: .2rem;
+    }
+
     /* ── Rotation dial ── */
     .dial-row {
       display: flex;
@@ -325,6 +457,9 @@
     </label>
   </div>
 
+  <!-- Hidden file input shared for add/replace layer -->
+  <input type="file" id="layer-file-input" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none;" />
+
   <!-- Workspace: canvas + controls (hidden until image loaded) -->
   <div class="axo-workspace" id="workspace" style="display:none;">
 
@@ -365,13 +500,14 @@
         <input type="range" id="angle" min="15" max="45" value="30" step="1" />
       </div>
 
-      <!-- Layers -->
+      <!-- Layer stack -->
       <div class="ctrl-group">
-        <div class="ctrl-label">
-          <span>Layers</span>
-          <span class="val" id="layers-val">3</span>
+        <div class="layers-header">
+          <span style="font-size:.82rem;color:var(--text-muted);">Layers</span>
+          <button class="add-layer-btn" id="add-layer-btn">+ Add layer</button>
         </div>
-        <input type="range" id="layers" min="1" max="5" value="3" step="1" />
+        <div class="layer-list" id="layer-list"></div>
+        <p class="ctrl-hint">Drag to reorder · click thumbnail to swap image</p>
       </div>
 
       <!-- Layer gap -->
@@ -449,7 +585,7 @@
           📋 Copy to clipboard
         </button>
         <button class="axo-btn axo-btn--ghost" id="reset-btn">
-          ↺ Upload new image
+          ↺ Clear all layers
         </button>
       </div>
     </div>

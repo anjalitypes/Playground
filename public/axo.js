@@ -122,15 +122,16 @@ class RotationDial {
 }
 
 // ── State ──────────────────────────────────────────────────
+// layers: array of { id, img (HTMLImageElement|null), name }
+// Layer 0 = front of the stack, Layer N-1 = back.
 const state = {
-  img: null,
+  layers: [],
   options: {
-    angle:      25,      // tilt angle in degrees
-    numLayers:  3,       // number of stacked layers
-    layerGap:   28,      // canvas-space offset between layers
-    edgeH:      6,       // thickness of visible edge strip per layer
-    maxW:       640,     // max screen width
-    rotation:   0,       // output rotation in degrees (0-360)
+    angle:      25,
+    layerGap:   28,
+    edgeH:      6,
+    maxW:       640,
+    rotation:   0,
     layerColor: '#2a2a3a',
     bgColor:    '#0a0a0f',
     grid:       false,
@@ -138,20 +139,24 @@ const state = {
   }
 };
 
+let _layerIdCounter = 0;
+
 // ── DOM refs ───────────────────────────────────────────────
-const fileInput   = document.getElementById('file-input');
-const dropZone    = document.getElementById('drop-zone');
-const uploadWrap  = document.getElementById('upload-wrap');
-const workspace   = document.getElementById('workspace');
-const canvas      = document.getElementById('axo-canvas');
-const canvasDims  = document.getElementById('canvas-dims');
-const placeholder = document.getElementById('canvas-placeholder');
-const downloadBtn = document.getElementById('download-btn');
-const copyBtn     = document.getElementById('copy-btn');
-const resetBtn    = document.getElementById('reset-btn');
+const fileInput      = document.getElementById('file-input');
+const dropZone       = document.getElementById('drop-zone');
+const uploadWrap     = document.getElementById('upload-wrap');
+const workspace      = document.getElementById('workspace');
+const canvas         = document.getElementById('axo-canvas');
+const canvasDims     = document.getElementById('canvas-dims');
+const placeholder    = document.getElementById('canvas-placeholder');
+const downloadBtn    = document.getElementById('download-btn');
+const copyBtn        = document.getElementById('copy-btn');
+const resetBtn       = document.getElementById('reset-btn');
+const layerFileInput = document.getElementById('layer-file-input');
+const addLayerBtn    = document.getElementById('add-layer-btn');
+const layerListEl    = document.getElementById('layer-list');
 
 const angleSlider  = document.getElementById('angle');
-const layersSlider = document.getElementById('layers');
 const gapSlider    = document.getElementById('gap');
 const edgeSlider   = document.getElementById('edge');
 const maxwSlider   = document.getElementById('maxw');
@@ -160,17 +165,165 @@ const bgColorIn    = document.getElementById('bg-color');
 const gridToggle   = document.getElementById('grid-toggle');
 const glowToggle   = document.getElementById('glow-toggle');
 const angleVal     = document.getElementById('angle-val');
-const layersVal    = document.getElementById('layers-val');
 const gapVal       = document.getElementById('gap-val');
 const edgeVal      = document.getElementById('edge-val');
 const maxwVal      = document.getElementById('maxw-val');
 const rotationVal  = document.getElementById('rotation-val');
 const dialCanvas   = document.getElementById('rotation-dial');
 
-// ── Event wiring ──────────────────────────────────────────
+// ── Layer management ──────────────────────────────────────
+
+function newLayerObj(img = null, name = null) {
+  const id = String(++_layerIdCounter);
+  return { id, img, name: name || `Layer ${id}` };
+}
+
+function addLayer(img = null) {
+  state.layers.push(newLayerObj(img));
+  syncWorkspace();
+  renderLayerList();
+  render();
+}
+
+function removeLayer(id) {
+  state.layers = state.layers.filter(l => l.id !== id);
+  renderLayerList();
+  render();
+  if (state.layers.length === 0) showUploadZone();
+}
+
+function setLayerImage(id, img) {
+  const layer = state.layers.find(l => l.id === id);
+  if (!layer) return;
+  layer.img = img;
+  renderLayerList();
+  render();
+}
+
+function moveLayer(fromIdx, toIdx) {
+  const [item] = state.layers.splice(fromIdx, 1);
+  state.layers.splice(toIdx, 0, item);
+  renderLayerList();
+  render();
+}
+
+// Which layer id is pending a file pick (null = add new layer)
+let _pendingLayerId = null;
+
+// ── Layer list UI ─────────────────────────────────────────
+
+function renderLayerList() {
+  layerListEl.innerHTML = '';
+
+  if (state.layers.length === 0) {
+    layerListEl.innerHTML = '<p class="layer-empty">No layers yet</p>';
+    return;
+  }
+
+  let dragSrcIdx = null;
+
+  state.layers.forEach((layer, i) => {
+    const item = document.createElement('div');
+    item.className = 'layer-item';
+    item.draggable = true;
+    item.dataset.idx = i;
+
+    // Drag handle
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '⠿';
+
+    // Thumbnail
+    const thumbWrap = document.createElement('div');
+    thumbWrap.className = 'layer-thumb-wrap';
+    thumbWrap.title = 'Click to change image';
+
+    const thumb = document.createElement('canvas');
+    thumb.className = 'layer-thumb';
+    thumb.width  = 46;
+    thumb.height = 32;
+    if (layer.img) {
+      thumb.getContext('2d').drawImage(layer.img, 0, 0, 46, 32);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'layer-thumb-overlay';
+    overlay.textContent = '⬆';
+
+    thumbWrap.appendChild(thumb);
+    thumbWrap.appendChild(overlay);
+    thumbWrap.addEventListener('click', () => {
+      _pendingLayerId = layer.id;
+      layerFileInput.value = '';
+      layerFileInput.click();
+    });
+
+    // Name
+    const name = document.createElement('span');
+    name.className = 'layer-name';
+    name.textContent = layer.img ? layer.name : layer.name + ' (empty)';
+
+    // Remove button
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'layer-remove';
+    removeBtn.textContent = '✕';
+    removeBtn.title = 'Remove layer';
+    removeBtn.addEventListener('click', () => removeLayer(layer.id));
+
+    item.append(handle, thumbWrap, name, removeBtn);
+
+    // ── Drag & drop reorder ──
+    item.addEventListener('dragstart', e => {
+      dragSrcIdx = i;
+      item.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+    });
+    item.addEventListener('dragend', () => {
+      item.classList.remove('dragging');
+      dragSrcIdx = null;
+    });
+    item.addEventListener('dragover', e => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      item.classList.add('drag-over');
+    });
+    item.addEventListener('dragleave', () => item.classList.remove('drag-over'));
+    item.addEventListener('drop', e => {
+      e.preventDefault();
+      item.classList.remove('drag-over');
+      const toIdx = +item.dataset.idx;
+      if (dragSrcIdx !== null && dragSrcIdx !== toIdx) moveLayer(dragSrcIdx, toIdx);
+    });
+
+    layerListEl.appendChild(item);
+  });
+}
+
+// ── File input for add/replace layer ─────────────────────
+
+layerFileInput.addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  loadFile(file, img => {
+    if (_pendingLayerId === null) {
+      addLayer(img);
+    } else {
+      setLayerImage(_pendingLayerId, img);
+    }
+    _pendingLayerId = null;
+  });
+});
+
+addLayerBtn.addEventListener('click', () => {
+  _pendingLayerId = null;
+  layerFileInput.value = '';
+  layerFileInput.click();
+});
+
+// ── Initial upload zone ───────────────────────────────────
 
 fileInput.addEventListener('change', e => {
-  if (e.target.files[0]) loadImage(e.target.files[0]);
+  if (e.target.files[0]) loadFile(e.target.files[0], img => addLayer(img));
 });
 
 dropZone.addEventListener('dragover', e => {
@@ -182,13 +335,15 @@ dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
   const f = e.dataTransfer.files[0];
-  if (f && f.type.startsWith('image/')) loadImage(f);
+  if (f && f.type.startsWith('image/')) loadFile(f, img => addLayer(img));
 });
 
 document.addEventListener('paste', e => {
   const item = Array.from(e.clipboardData.items).find(i => i.type.startsWith('image/'));
-  if (item) loadImage(item.getAsFile());
+  if (item) loadFile(item.getAsFile(), img => addLayer(img));
 });
+
+// ── Slider / control wiring ───────────────────────────────
 
 function bindSlider(el, key, unit, display) {
   el.addEventListener('input', () => {
@@ -198,11 +353,10 @@ function bindSlider(el, key, unit, display) {
   });
 }
 
-bindSlider(angleSlider,  'angle',     '°',  angleVal);
-bindSlider(layersSlider, 'numLayers', '',   layersVal);
-bindSlider(gapSlider,    'layerGap',  'px', gapVal);
-bindSlider(edgeSlider,   'edgeH',     'px', edgeVal);
-bindSlider(maxwSlider,   'maxW',      'px', maxwVal);
+bindSlider(angleSlider, 'angle',    '°',  angleVal);
+bindSlider(gapSlider,   'layerGap', 'px', gapVal);
+bindSlider(edgeSlider,  'edgeH',    'px', edgeVal);
+bindSlider(maxwSlider,  'maxW',     'px', maxwVal);
 
 layerColorIn.addEventListener('input', () => { state.options.layerColor = layerColorIn.value; render(); });
 bgColorIn.addEventListener('input',    () => { state.options.bgColor    = bgColorIn.value;    render(); });
@@ -215,6 +369,8 @@ const dial = new RotationDial(dialCanvas, angle => {
   rotationVal.textContent = Math.round(angle) + '°';
   render();
 });
+
+// ── Action buttons ────────────────────────────────────────
 
 downloadBtn.addEventListener('click', () => {
   const link = document.createElement('a');
@@ -238,58 +394,65 @@ copyBtn.addEventListener('click', () => {
 });
 
 resetBtn.addEventListener('click', () => {
-  state.img = null;
+  state.layers = [];
+  renderLayerList();
+  showUploadZone();
+});
+
+// ── UI helpers ────────────────────────────────────────────
+
+function syncWorkspace() {
+  const hasLayers = state.layers.length > 0;
+  uploadWrap.style.display  = hasLayers ? 'none' : '';
+  workspace.style.display   = hasLayers ? ''     : 'none';
+  canvas.style.display      = hasLayers ? 'block': 'none';
+  placeholder.style.display = hasLayers ? 'none' : '';
+  downloadBtn.disabled = !hasLayers;
+  copyBtn.disabled     = !hasLayers;
+}
+
+function showUploadZone() {
   fileInput.value = '';
-  workspace.style.display   = 'none';
   uploadWrap.style.display  = '';
+  workspace.style.display   = 'none';
   canvas.style.display      = 'none';
   placeholder.style.display = '';
   downloadBtn.disabled = true;
   copyBtn.disabled     = true;
-});
+}
 
-// ── Image loading ─────────────────────────────────────────
+// ── File loading utility ──────────────────────────────────
 
-function loadImage(file) {
+function loadFile(file, onLoad) {
   const url = URL.createObjectURL(file);
   const img = new Image();
-  img.onload = () => {
-    URL.revokeObjectURL(url);
-    state.img = img;
-    uploadWrap.style.display  = 'none';
-    workspace.style.display   = '';
-    placeholder.style.display = 'none';
-    canvas.style.display      = 'block';
-    downloadBtn.disabled      = false;
-    copyBtn.disabled          = false;
-    render();
-  };
-  img.onerror = () => alert('Could not load image.');
+  img.onload  = () => { URL.revokeObjectURL(url); onLoad(img); };
+  img.onerror = () => { URL.revokeObjectURL(url); alert('Could not load image.'); };
   img.src = url;
 }
 
 // ── Render ────────────────────────────────────────────────
 
 function render() {
-  if (!state.img) return;
-  drawAxo(canvas, state.img, state.options);
+  const active = state.layers.filter(l => l.img);
+  if (active.length === 0) return;
+  drawAxo(canvas, active, state.options);
   canvasDims.textContent = `${canvas.width} × ${canvas.height}`;
 }
 
 // ── Core multi-layer axonometric renderer ─────────────────
 //
-// Each layer is the same screenshot drawn as an isometric parallelogram.
-// Layer 0 = front (bottom), Layer N-1 = back (top of stack).
-// Layers are offset in the depth direction: (cosA, -sinA) in canvas space.
-// Drawn back-to-front so front layer is on top.
-//
-// Screen face transform for a layer at canvas origin (ox, oy):
-//   ctx.setTransform(cosA, sinA, 0, 1, ox, oy - H)
-//   image (x,y) → canvas (cosA·x + ox,  sinA·x + y + oy - H)
+// layers: array of { img } objects (all have .img set).
+// Layer 0 = front of the stack. Layer N-1 = back.
+// Drawn back-to-front so layer 0 ends up on top.
+// Each layer uses its own .img; dimensions are normalised to the
+// first layer's scaled size so all panels align.
 
-function drawAxo(cv, img, opts) {
+function drawAxo(cv, layers, opts) {
+  const img = layers[0].img; // reference for W/H
+  const numLayers = layers.length;
   const {
-    angle, numLayers, layerGap, edgeH, maxW, rotation,
+    angle, layerGap, edgeH, maxW, rotation,
     layerColor, bgColor, grid, glow,
   } = opts;
 
@@ -388,7 +551,7 @@ function drawAxo(cv, img, opts) {
     ctx.save();
     clipPoly(ctx, [TL, TR, BR, BL]);
     ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
-    ctx.drawImage(img, 0, 0, W, H);
+    ctx.drawImage(layers[i].img, 0, 0, W, H);
     ctx.restore();
 
     // Darken back layers
