@@ -553,20 +553,21 @@ function drawAxo(cv, layers, opts) {
   for (let i = numLayers - 1; i >= 0; i--) {
     const { TL, TR, BR, BL } = corners[i];
 
-    // Edge strip at bottom of this layer
-    // The "floor" of each layer: goes straight down by edgeH pixels in canvas
+    // 3-D edge: extrude each visible face straight down by edgeH canvas px
     if (edgeH > 0) {
-      const edgeCol = shadeHex(layerColor, i === 0 ? 0 : -0.1);
-      fillPoly(ctx, [
-        BL, BR,
-        [BR[0], BR[1] + edgeH],
-        [BL[0], BL[1] + edgeH],
-      ], edgeCol);
-      strokePoly(ctx, [
-        BL, BR,
-        [BR[0], BR[1] + edgeH],
-        [BL[0], BL[1] + edgeH],
-      ], 'rgba(255,255,255,0.06)', 0.5);
+      const BL_d = [BL[0], BL[1] + edgeH];
+      const BR_d = [BR[0], BR[1] + edgeH];
+      const TR_d = [TR[0], TR[1] + edgeH];
+
+      // Bottom face — medium shade (faces roughly downward)
+      const colBottom = shadeHex(layerColor, -0.18);
+      fillPoly(ctx, [BL, BR, BR_d, BL_d], colBottom);
+      strokePoly(ctx, [BL, BR, BR_d, BL_d], 'rgba(255,255,255,0.06)', 0.5);
+
+      // Right side face — darker (faces away from viewer)
+      const colRight = shadeHex(layerColor, -0.35);
+      fillPoly(ctx, [TR, BR, BR_d, TR_d], colRight);
+      strokePoly(ctx, [TR, BR, BR_d, TR_d], 'rgba(255,255,255,0.03)', 0.5);
     }
 
 
