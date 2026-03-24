@@ -465,8 +465,8 @@ function drawAxo(cv, layers, opts) {
   const W = img.naturalWidth  * scale;
   const H = img.naturalHeight * scale;
 
-  const dX = 0;
-  const dY = layerGap;
+  const dX = layerGap * cosA;
+  const dY = layerGap * sinA;
 
   const padX = 50;
   const padY = 50;
@@ -535,14 +535,6 @@ function drawAxo(cv, layers, opts) {
       ], 'rgba(255,255,255,0.06)', 0.5);
     }
 
-    // Left connecting face between layer i and i-1 (front)
-    // Visible only for back layers
-    if (i > 0) {
-      const { TL: fTL, BL: fBL } = corners[i - 1];
-      const sideCol = shadeHex(layerColor, 0.05);
-      fillPoly(ctx, [TL, fTL, fBL, BL], sideCol);
-      strokePoly(ctx, [TL, fTL, fBL, BL], 'rgba(255,255,255,0.06)', 0.5);
-    }
 
     // Draw screen image
     const lox = ox + i * dX;
