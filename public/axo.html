@@ -369,22 +369,31 @@
         <input type="range" id="angle" min="15" max="45" value="30" step="1" />
       </div>
 
-      <!-- Depth -->
+      <!-- Layers -->
       <div class="ctrl-group">
         <div class="ctrl-label">
-          <span>Depth</span>
-          <span class="val" id="depth-val">40px</span>
+          <span>Layers</span>
+          <span class="val" id="layers-val">3</span>
         </div>
-        <input type="range" id="depth" min="0" max="120" value="40" step="4" />
+        <input type="range" id="layers" min="1" max="5" value="3" step="1" />
       </div>
 
-      <!-- Bezel -->
+      <!-- Layer gap -->
       <div class="ctrl-group">
         <div class="ctrl-label">
-          <span>Bezel</span>
-          <span class="val" id="bezel-val">16px</span>
+          <span>Layer gap</span>
+          <span class="val" id="gap-val">28px</span>
         </div>
-        <input type="range" id="bezel" min="0" max="40" value="16" step="2" />
+        <input type="range" id="gap" min="8" max="80" value="28" step="2" />
+      </div>
+
+      <!-- Edge strip -->
+      <div class="ctrl-group">
+        <div class="ctrl-label">
+          <span>Edge thickness</span>
+          <span class="val" id="edge-val">6px</span>
+        </div>
+        <input type="range" id="edge" min="0" max="20" value="6" step="1" />
       </div>
 
       <!-- Max width -->
@@ -398,12 +407,12 @@
 
       <div class="divider"></div>
 
-      <!-- Device color -->
+      <!-- Layer edge color -->
       <div class="ctrl-group">
-        <div class="ctrl-label"><span>Device color</span></div>
+        <div class="ctrl-label"><span>Layer color</span></div>
         <div class="ctrl-color-row">
-          <input type="color" id="device-color" value="#1e1e2e" />
-          <span style="font-size:.82rem;color:var(--text-muted);">Bezel &amp; sides</span>
+          <input type="color" id="layer-color" value="#2a2a3a" />
+          <span style="font-size:.82rem;color:var(--text-muted);">Edge strips &amp; sides</span>
         </div>
       </div>
 

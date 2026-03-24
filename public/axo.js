@@ -1,6 +1,6 @@
 /* ============================================================
    Screen → Axonometric Drawing Converter
-   Canvas-based isometric projection renderer
+   Multi-layer stacked isometric renderer
    ============================================================ */
 
 'use strict';
@@ -9,43 +9,46 @@
 const state = {
   img: null,
   options: {
-    angle: 30,         // tilt angle in degrees
-    depth: 40,         // device depth in px (before scale)
-    bezel: 16,         // bezel width in px (image-space)
-    maxW: 640,         // max screen width before scaling
-    orient: 'right',   // 'right' | 'left'
-    deviceColor: '#1e1e2e',
-    bgColor: '#0f1117',
-    grid: false,
-    glow: true,
+    angle:      25,      // tilt angle in degrees
+    numLayers:  3,       // number of stacked layers
+    layerGap:   28,      // canvas-space offset between layers
+    edgeH:      6,       // thickness of visible edge strip per layer
+    maxW:       640,     // max screen width
+    orient:     'right', // 'right' | 'left'
+    layerColor: '#2a2a3a',
+    bgColor:    '#0a0a0f',
+    grid:       false,
+    glow:       true,
   }
 };
 
 // ── DOM refs ───────────────────────────────────────────────
-const fileInput     = document.getElementById('file-input');
-const dropZone      = document.getElementById('drop-zone');
-const uploadWrap    = document.getElementById('upload-wrap');
-const workspace     = document.getElementById('workspace');
-const canvas        = document.getElementById('axo-canvas');
-const canvasDims    = document.getElementById('canvas-dims');
-const placeholder   = document.getElementById('canvas-placeholder');
-const downloadBtn   = document.getElementById('download-btn');
-const copyBtn       = document.getElementById('copy-btn');
-const resetBtn      = document.getElementById('reset-btn');
+const fileInput   = document.getElementById('file-input');
+const dropZone    = document.getElementById('drop-zone');
+const uploadWrap  = document.getElementById('upload-wrap');
+const workspace   = document.getElementById('workspace');
+const canvas      = document.getElementById('axo-canvas');
+const canvasDims  = document.getElementById('canvas-dims');
+const placeholder = document.getElementById('canvas-placeholder');
+const downloadBtn = document.getElementById('download-btn');
+const copyBtn     = document.getElementById('copy-btn');
+const resetBtn    = document.getElementById('reset-btn');
 
-const angleSlider   = document.getElementById('angle');
-const depthSlider   = document.getElementById('depth');
-const bezelSlider   = document.getElementById('bezel');
-const maxwSlider    = document.getElementById('maxw');
-const deviceColor   = document.getElementById('device-color');
-const bgColorInput  = document.getElementById('bg-color');
-const gridToggle    = document.getElementById('grid-toggle');
-const glowToggle    = document.getElementById('glow-toggle');
-const angleVal      = document.getElementById('angle-val');
-const depthVal      = document.getElementById('depth-val');
-const bezelVal      = document.getElementById('bezel-val');
-const maxwVal       = document.getElementById('maxw-val');
-const orientBtns    = document.querySelectorAll('[data-orient]');
+const angleSlider  = document.getElementById('angle');
+const layersSlider = document.getElementById('layers');
+const gapSlider    = document.getElementById('gap');
+const edgeSlider   = document.getElementById('edge');
+const maxwSlider   = document.getElementById('maxw');
+const layerColorIn = document.getElementById('layer-color');
+const bgColorIn    = document.getElementById('bg-color');
+const gridToggle   = document.getElementById('grid-toggle');
+const glowToggle   = document.getElementById('glow-toggle');
+const angleVal     = document.getElementById('angle-val');
+const layersVal    = document.getElementById('layers-val');
+const gapVal       = document.getElementById('gap-val');
+const edgeVal      = document.getElementById('edge-val');
+const maxwVal      = document.getElementById('maxw-val');
+const orientBtns   = document.querySelectorAll('[data-orient]');
 
 // ── Event wiring ──────────────────────────────────────────
 
@@ -57,14 +60,12 @@ dropZone.addEventListener('dragover', e => {
   e.preventDefault();
   dropZone.classList.add('drag-over');
 });
-
 dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
-
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  const file = e.dataTransfer.files[0];
-  if (file && file.type.startsWith('image/')) loadImage(file);
+  const f = e.dataTransfer.files[0];
+  if (f && f.type.startsWith('image/')) loadImage(f);
 });
 
 document.addEventListener('paste', e => {
@@ -72,49 +73,24 @@ document.addEventListener('paste', e => {
   if (item) loadImage(item.getAsFile());
 });
 
-angleSlider.addEventListener('input', () => {
-  state.options.angle = +angleSlider.value;
-  angleVal.textContent = angleSlider.value + '°';
-  render();
-});
+function bindSlider(el, key, unit, display) {
+  el.addEventListener('input', () => {
+    state.options[key] = +el.value;
+    display.textContent = el.value + unit;
+    render();
+  });
+}
 
-depthSlider.addEventListener('input', () => {
-  state.options.depth = +depthSlider.value;
-  depthVal.textContent = depthSlider.value + 'px';
-  render();
-});
+bindSlider(angleSlider,  'angle',     '°',  angleVal);
+bindSlider(layersSlider, 'numLayers', '',   layersVal);
+bindSlider(gapSlider,    'layerGap',  'px', gapVal);
+bindSlider(edgeSlider,   'edgeH',     'px', edgeVal);
+bindSlider(maxwSlider,   'maxW',      'px', maxwVal);
 
-bezelSlider.addEventListener('input', () => {
-  state.options.bezel = +bezelSlider.value;
-  bezelVal.textContent = bezelSlider.value + 'px';
-  render();
-});
-
-maxwSlider.addEventListener('input', () => {
-  state.options.maxW = +maxwSlider.value;
-  maxwVal.textContent = maxwSlider.value + 'px';
-  render();
-});
-
-deviceColor.addEventListener('input', () => {
-  state.options.deviceColor = deviceColor.value;
-  render();
-});
-
-bgColorInput.addEventListener('input', () => {
-  state.options.bgColor = bgColorInput.value;
-  render();
-});
-
-gridToggle.addEventListener('change', () => {
-  state.options.grid = gridToggle.checked;
-  render();
-});
-
-glowToggle.addEventListener('change', () => {
-  state.options.glow = glowToggle.checked;
-  render();
-});
+layerColorIn.addEventListener('input', () => { state.options.layerColor = layerColorIn.value; render(); });
+bgColorIn.addEventListener('input',    () => { state.options.bgColor    = bgColorIn.value;    render(); });
+gridToggle.addEventListener('change',  () => { state.options.grid       = gridToggle.checked; render(); });
+glowToggle.addEventListener('change',  () => { state.options.glow       = glowToggle.checked; render(); });
 
 orientBtns.forEach(btn => {
   btn.addEventListener('click', () => {
@@ -132,31 +108,29 @@ downloadBtn.addEventListener('click', () => {
   link.click();
 });
 
-copyBtn.addEventListener('click', async () => {
-  try {
-    canvas.toBlob(async blob => {
-      await navigator.clipboard.write([
-        new ClipboardItem({ 'image/png': blob })
-      ]);
+copyBtn.addEventListener('click', () => {
+  canvas.toBlob(async blob => {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
       const orig = copyBtn.textContent;
       copyBtn.textContent = '✓ Copied!';
       setTimeout(() => { copyBtn.textContent = orig; }, 1800);
-    }, 'image/png');
-  } catch {
-    copyBtn.textContent = '✗ Failed';
-    setTimeout(() => { copyBtn.textContent = '📋 Copy to clipboard'; }, 1800);
-  }
+    } catch {
+      copyBtn.textContent = '✗ Not supported';
+      setTimeout(() => { copyBtn.textContent = '📋 Copy to clipboard'; }, 1800);
+    }
+  }, 'image/png');
 });
 
 resetBtn.addEventListener('click', () => {
   state.img = null;
   fileInput.value = '';
-  workspace.style.display = 'none';
-  uploadWrap.style.display = '';
-  canvas.style.display = 'none';
+  workspace.style.display   = 'none';
+  uploadWrap.style.display  = '';
+  canvas.style.display      = 'none';
   placeholder.style.display = '';
   downloadBtn.disabled = true;
-  copyBtn.disabled = true;
+  copyBtn.disabled     = true;
 });
 
 // ── Image loading ─────────────────────────────────────────
@@ -167,15 +141,15 @@ function loadImage(file) {
   img.onload = () => {
     URL.revokeObjectURL(url);
     state.img = img;
-    uploadWrap.style.display = 'none';
-    workspace.style.display = '';
+    uploadWrap.style.display  = 'none';
+    workspace.style.display   = '';
     placeholder.style.display = 'none';
-    canvas.style.display = 'block';
-    downloadBtn.disabled = false;
-    copyBtn.disabled = false;
+    canvas.style.display      = 'block';
+    downloadBtn.disabled      = false;
+    copyBtn.disabled          = false;
     render();
   };
-  img.onerror = () => alert('Could not load image. Please try a different file.');
+  img.onerror = () => alert('Could not load image.');
   img.src = url;
 }
 
@@ -187,30 +161,21 @@ function render() {
   canvasDims.textContent = `${canvas.width} × ${canvas.height}`;
 }
 
-// ── Core axonometric renderer ─────────────────────────────
+// ── Core multi-layer axonometric renderer ─────────────────
 //
-// Isometric axes used:
-//   X (screen horizontal): canvas direction = (cosA, sinA)  [right + down]
-//   Y (screen vertical):   canvas direction = (0, 1)        [straight down]
-//   Z (depth away):        canvas direction = (cosA, -sinA) [right + up]
+// Each layer is the same screenshot drawn as an isometric parallelogram.
+// Layer 0 = front (bottom), Layer N-1 = back (top of stack).
+// Layers are offset in the depth direction: (cosA, -sinA) in canvas space.
+// Drawn back-to-front so front layer is on top.
 //
-// The screen face is drawn as a parallelogram:
-//   TL (top-left)  = (ox, oy - H)
-//   TR (top-right) = (ox + W·cosA, oy + W·sinA - H)
-//   BR (bot-right) = (ox + W·cosA, oy + W·sinA)
-//   BL (bot-left)  = (ox, oy)
-//
-// The transform that maps image (x,y) → canvas:
+// Screen face transform for a layer at canvas origin (ox, oy):
 //   ctx.setTransform(cosA, sinA, 0, 1, ox, oy - H)
-//
-// The right side (depth D) goes in the +Z direction.
-// The top face connects TL/TR to their depth counterparts.
+//   image (x,y) → canvas (cosA·x + ox,  sinA·x + y + oy - H)
 
 function drawAxo(cv, img, opts) {
   const {
-    angle, depth: D, bezel: B, maxW, orient,
-    deviceColor: devCol, bgColor: bgCol,
-    grid, glow,
+    angle, numLayers, layerGap, edgeH, maxW, orient,
+    layerColor, bgColor, grid, glow,
   } = opts;
 
   const rad  = angle * Math.PI / 180;
@@ -219,145 +184,169 @@ function drawAxo(cv, img, opts) {
 
   // Scale image to fit maxW
   const scale = Math.min(1, maxW / img.naturalWidth);
-  const W = img.naturalWidth * scale;
+  const W = img.naturalWidth  * scale;
   const H = img.naturalHeight * scale;
 
-  // Padding at edges
-  const pad = Math.max(40, Math.ceil(D * sinA) + 24);
+  // Depth direction per-layer step in canvas space (upper-right)
+  const dX = layerGap * cosA;
+  const dY = layerGap * sinA;
 
-  // Origin (BL of screen face in canvas space)
-  const ox = pad;
-  const oy = pad + H;
+  // Padding
+  const padX = 50;
+  const padY = 50;
 
-  // Helper: map screen-image coords → canvas
-  const tp = (x, y) => [cosA * x + ox, sinA * x + y + oy - H];
+  const oy = padY + H + (numLayers - 1) * dY;
+  const ox = padX;
 
-  // Key corner points of screen face
-  const TL = tp(0,   0);
-  const TR = tp(W,   0);
-  const BR = tp(W,   H);
-  const BL = tp(0,   H);
-
-  // Depth direction unit: (cosA, -sinA) in canvas space
-  // Back corners (shifted by D in depth direction)
-  const TL_b = [TL[0] + D * cosA, TL[1] - D * sinA];
-  const TR_b = [TR[0] + D * cosA, TR[1] - D * sinA];
-  const BR_b = [BR[0] + D * cosA, BR[1] - D * sinA];
-
-  // Canvas size
-  const cvW = Math.ceil(BR_b[0] + pad);
-  const cvH = Math.ceil(BR[1]   + pad);
+  const cvW = Math.ceil(ox + W * cosA + (numLayers - 1) * dX + padX + edgeH);
+  const cvH = Math.ceil(oy + W * sinA + edgeH + padY);
 
   cv.width  = cvW;
   cv.height = cvH;
 
-  const ctx = cv.getContext('2d');
+  // For 'left' orientation draw into an offscreen canvas then flip.
+  // We can't use ctx.scale(-1,1) because ctx.setTransform() (used for images)
+  // replaces the current transform entirely, bypassing any canvas-level flip.
+  const offscreen = orient === 'left'
+    ? Object.assign(document.createElement('canvas'), { width: cvW, height: cvH })
+    : null;
+  const ctx = offscreen ? offscreen.getContext('2d') : cv.getContext('2d');
+
   ctx.clearRect(0, 0, cvW, cvH);
 
-  // For "left" orientation we flip horizontally around centre
-  if (orient === 'left') {
-    ctx.save();
-    ctx.translate(cvW, 0);
-    ctx.scale(-1, 1);
-  }
-
   // ── Background ──
-  ctx.fillStyle = bgCol;
+  ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, cvW, cvH);
 
-  // ── Drop shadow under the whole device ──
+  // Helper: transform image-space point for layer i
+  const tp = (i, x, y) => {
+    const lox = ox + i * dX;
+    const loy = oy - i * dY;
+    return [cosA * x + lox, sinA * x + y + loy - H];
+  };
+
+  // Precompute corners for all layers
+  const corners = [];
+  for (let i = 0; i < numLayers; i++) {
+    corners.push({
+      TL: tp(i, 0, 0),
+      TR: tp(i, W, 0),
+      BR: tp(i, W, H),
+      BL: tp(i, 0, H),
+    });
+  }
+
+  // ── Drop shadow under front layer ──
   ctx.save();
-  ctx.shadowColor   = 'rgba(0,0,0,0.55)';
-  ctx.shadowBlur    = 28;
-  ctx.shadowOffsetX = 6;
-  ctx.shadowOffsetY = 10;
-  fillPoly(ctx, [TL, TR, BR, BL], 'rgba(0,0,0,0.01)');
+  ctx.shadowColor   = 'rgba(0,0,0,0.7)';
+  ctx.shadowBlur    = 36;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 14;
+  const { TL: sTL, TR: sTR, BR: sBR, BL: sBL } = corners[0];
+  fillPoly(ctx, [sTL, sTR, sBR, sBL], 'rgba(0,0,0,0.01)');
   ctx.restore();
 
-  // ── Colour helpers derived from deviceColor ──
-  const devDark  = shadeHex(devCol, -0.35);
-  const devMid   = shadeHex(devCol, -0.15);
+  // ── Draw layers back-to-front ──
+  for (let i = numLayers - 1; i >= 0; i--) {
+    const { TL, TR, BR, BL } = corners[i];
 
-  // ── Draw order: top face → right side → front face ──
+    // Edge strip at bottom of this layer
+    // The "floor" of each layer: goes straight down by edgeH pixels in canvas
+    if (edgeH > 0) {
+      const edgeCol = shadeHex(layerColor, i === 0 ? 0 : -0.1);
+      fillPoly(ctx, [
+        BL, BR,
+        [BR[0], BR[1] + edgeH],
+        [BL[0], BL[1] + edgeH],
+      ], edgeCol);
+      strokePoly(ctx, [
+        BL, BR,
+        [BR[0], BR[1] + edgeH],
+        [BL[0], BL[1] + edgeH],
+      ], 'rgba(255,255,255,0.06)', 0.5);
+    }
 
-  // Top face (TL → TR → TR_b → TL_b)
-  fillPoly(ctx, [TL, TR, TR_b, TL_b], devMid);
-  strokePoly(ctx, [TL, TR, TR_b, TL_b], 'rgba(255,255,255,0.08)', 1);
+    // Left connecting face between layer i and i-1 (front)
+    // Visible only for back layers
+    if (i > 0) {
+      const { TL: fTL, BL: fBL } = corners[i - 1];
+      const sideCol = shadeHex(layerColor, 0.05);
+      fillPoly(ctx, [TL, fTL, fBL, BL], sideCol);
+      strokePoly(ctx, [TL, fTL, fBL, BL], 'rgba(255,255,255,0.06)', 0.5);
+    }
 
-  // Right side face (TR → BR → BR_b → TR_b)
-  fillPoly(ctx, [TR, BR, BR_b, TR_b], devDark);
-  strokePoly(ctx, [TR, BR, BR_b, TR_b], 'rgba(255,255,255,0.05)', 1);
+    // Draw screen image
+    const lox = ox + i * dX;
+    const loy = oy - i * dY;
 
-  // Device front face (bezel) — expanded by B pixels in image-space
-  const oBL = tp(-B,   H + B);
-  const oBR = tp(W + B, H + B);
-  const oTR = tp(W + B, -B);
-  const oTL = tp(-B,   -B);
-  fillPoly(ctx, [oBL, oBR, oTR, oTL], devCol);
-
-  // ── Screen image ──
-  ctx.save();
-  clipPoly(ctx, [TL, TR, BR, BL]);
-  ctx.setTransform(cosA, sinA, 0, 1, ox, oy - H);
-  ctx.drawImage(img, 0, 0, W, H);
-  ctx.restore();
-
-  // ── Screen glow (subtle highlight from top) ──
-  if (glow) {
     ctx.save();
     clipPoly(ctx, [TL, TR, BR, BL]);
-    const g = ctx.createLinearGradient(TL[0], TL[1], BL[0], BL[1]);
-    g.addColorStop(0,   'rgba(255,255,255,0.07)');
-    g.addColorStop(0.4, 'rgba(255,255,255,0.01)');
-    g.addColorStop(1,   'rgba(0,0,0,0.12)');
-    fillPoly(ctx, [TL, TR, BR, BL], g);
+    ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
+    ctx.drawImage(img, 0, 0, W, H);
     ctx.restore();
+
+    // Darken back layers
+    if (i > 0) {
+      const alpha = Math.min(0.55, i * 0.2);
+      ctx.save();
+      clipPoly(ctx, [TL, TR, BR, BL]);
+      fillPoly(ctx, [TL, TR, BR, BL], `rgba(0,0,0,${alpha})`);
+      ctx.restore();
+    }
+
+    // Glow on front layer only
+    if (i === 0 && glow) {
+      ctx.save();
+      clipPoly(ctx, [TL, TR, BR, BL]);
+      const g = ctx.createLinearGradient(TL[0], TL[1], BL[0], BL[1]);
+      g.addColorStop(0,   'rgba(255,255,255,0.08)');
+      g.addColorStop(0.35,'rgba(255,255,255,0.01)');
+      g.addColorStop(1,   'rgba(0,0,0,0.1)');
+      fillPoly(ctx, [TL, TR, BR, BL], g);
+      ctx.restore();
+    }
+
+    // Grid on front layer only
+    if (i === 0 && grid) {
+      drawGrid(ctx, lox, loy, W, H, cosA, sinA);
+    }
+
+    // Outline
+    const outlineAlpha = i === 0 ? 0.25 : 0.12;
+    strokePoly(ctx, [TL, TR, BR, BL], `rgba(255,255,255,${outlineAlpha})`, 1);
   }
 
-  // ── Grid overlay ──
-  if (grid) {
-    drawGrid(ctx, tp, W, H, cosA, sinA, ox, oy);
+  // If we used an offscreen canvas, blit it onto the real canvas flipped
+  if (offscreen) {
+    const mainCtx = cv.getContext('2d');
+    mainCtx.clearRect(0, 0, cvW, cvH);
+    mainCtx.save();
+    mainCtx.translate(cvW, 0);
+    mainCtx.scale(-1, 1);
+    mainCtx.drawImage(offscreen, 0, 0);
+    mainCtx.restore();
   }
-
-  // ── Outline edges ──
-  const outline = 'rgba(255,255,255,0.18)';
-  strokePoly(ctx, [TL, TR, BR, BL], outline, 1);
-  // depth edges
-  ctx.strokeStyle = outline;
-  ctx.lineWidth = 1;
-  line(ctx, TL, TL_b);
-  line(ctx, TR, TR_b);
-  line(ctx, BR, BR_b);
-
-  if (orient === 'left') ctx.restore();
 }
 
 // ── Grid overlay ─────────────────────────────────────────
 
-function drawGrid(ctx, tp, W, H, cosA, sinA, ox, oy) {
+function drawGrid(ctx, ox, oy, W, H, cosA, sinA) {
   const step = Math.max(20, Math.round(W / 20));
+  const tp = (x, y) => [cosA * x + ox, sinA * x + y + oy - H];
+
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-  ctx.lineWidth = 0.5;
+  ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+  ctx.lineWidth   = 0.5;
 
-  // Vertical grid lines (constant x in image-space)
   for (let x = step; x < W; x += step) {
-    const top = tp(x, 0);
-    const bot = tp(x, H);
-    ctx.beginPath();
-    ctx.moveTo(top[0], top[1]);
-    ctx.lineTo(bot[0],  bot[1]);
-    ctx.stroke();
+    const [ax, ay] = tp(x, 0);
+    const [bx, by] = tp(x, H);
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
   }
-
-  // Horizontal grid lines (constant y in image-space)
   for (let y = step; y < H; y += step) {
-    const left  = tp(0, y);
-    const right = tp(W, y);
-    ctx.beginPath();
-    ctx.moveTo(left[0],  left[1]);
-    ctx.lineTo(right[0], right[1]);
-    ctx.stroke();
+    const [ax, ay] = tp(0, y);
+    const [bx, by] = tp(W, y);
+    ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(bx, by); ctx.stroke();
   }
 
   ctx.restore();
@@ -380,7 +369,7 @@ function strokePoly(ctx, pts, style, lw) {
   for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
   ctx.closePath();
   ctx.strokeStyle = style;
-  ctx.lineWidth = lw;
+  ctx.lineWidth   = lw;
   ctx.stroke();
 }
 
@@ -392,19 +381,13 @@ function clipPoly(ctx, pts) {
   ctx.clip();
 }
 
-function line(ctx, a, b) {
-  ctx.beginPath();
-  ctx.moveTo(a[0], a[1]);
-  ctx.lineTo(b[0], b[1]);
-  ctx.stroke();
-}
-
-// Lighten (+) or darken (−) a hex colour by a fraction
 function shadeHex(hex, frac) {
   let c = hex.replace('#', '');
   if (c.length === 3) c = c.split('').map(x => x + x).join('');
-  const r = Math.max(0, Math.min(255, parseInt(c.slice(0, 2), 16) + Math.round(255 * frac)));
-  const g = Math.max(0, Math.min(255, parseInt(c.slice(2, 4), 16) + Math.round(255 * frac)));
-  const b = Math.max(0, Math.min(255, parseInt(c.slice(4, 6), 16) + Math.round(255 * frac)));
+  const r = clamp(parseInt(c.slice(0,2), 16) + Math.round(255 * frac));
+  const g = clamp(parseInt(c.slice(2,4), 16) + Math.round(255 * frac));
+  const b = clamp(parseInt(c.slice(4,6), 16) + Math.round(255 * frac));
   return `rgb(${r},${g},${b})`;
 }
+
+function clamp(v) { return Math.max(0, Math.min(255, v)); }
