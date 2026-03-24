@@ -173,28 +173,21 @@
       border: 2px solid var(--bg);
     }
 
-    .ctrl-segment {
+    /* ── Rotation dial ── */
+    .dial-row {
       display: flex;
-      gap: .5rem;
+      align-items: center;
+      gap: 1rem;
     }
 
-    .seg-btn {
-      flex: 1;
-      padding: .4rem .5rem;
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      background: transparent;
-      color: var(--text-muted);
-      font-size: .8rem;
-      cursor: pointer;
-      transition: background .15s, border-color .15s, color .15s;
+    #rotation-dial {
+      cursor: grab;
+      border-radius: 50%;
+      touch-action: none;
+      flex-shrink: 0;
     }
 
-    .seg-btn.active {
-      background: rgba(99,102,241,0.18);
-      border-color: var(--accent);
-      color: var(--text);
-    }
+    #rotation-dial:active { cursor: grabbing; }
 
     .ctrl-color-row {
       display: flex;
@@ -351,12 +344,15 @@
     <div class="axo-controls">
       <h3>Controls</h3>
 
-      <!-- Orientation -->
+      <!-- Rotation dial -->
       <div class="ctrl-group">
-        <div class="ctrl-label"><span>Orientation</span></div>
-        <div class="ctrl-segment">
-          <button class="seg-btn active" data-orient="right">↗ Right</button>
-          <button class="seg-btn" data-orient="left">↖ Left</button>
+        <div class="ctrl-label">
+          <span>Rotation</span>
+          <span class="val" id="rotation-val">0°</span>
+        </div>
+        <div class="dial-row">
+          <canvas id="rotation-dial" width="72" height="72"></canvas>
+          <span style="font-size:.8rem;color:var(--text-muted);line-height:1.4;">Drag to spin<br>the drawing</span>
         </div>
       </div>
 

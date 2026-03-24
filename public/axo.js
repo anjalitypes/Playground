@@ -14,7 +14,7 @@ const state = {
     layerGap:   28,      // canvas-space offset between layers
     edgeH:      6,       // thickness of visible edge strip per layer
     maxW:       640,     // max screen width
-    orient:     'right', // 'right' | 'left'
+    rotation:   0,       // output rotation in degrees (0-360)
     layerColor: '#2a2a3a',
     bgColor:    '#0a0a0f',
     grid:       false,
@@ -48,7 +48,8 @@ const layersVal    = document.getElementById('layers-val');
 const gapVal       = document.getElementById('gap-val');
 const edgeVal      = document.getElementById('edge-val');
 const maxwVal      = document.getElementById('maxw-val');
-const orientBtns   = document.querySelectorAll('[data-orient]');
+const rotationVal  = document.getElementById('rotation-val');
+const dialCanvas   = document.getElementById('rotation-dial');
 
 // ── Event wiring ──────────────────────────────────────────
 
@@ -92,13 +93,11 @@ bgColorIn.addEventListener('input',    () => { state.options.bgColor    = bgColo
 gridToggle.addEventListener('change',  () => { state.options.grid       = gridToggle.checked; render(); });
 glowToggle.addEventListener('change',  () => { state.options.glow       = glowToggle.checked; render(); });
 
-orientBtns.forEach(btn => {
-  btn.addEventListener('click', () => {
-    orientBtns.forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.options.orient = btn.dataset.orient;
-    render();
-  });
+// ── Rotation dial ─────────────────────────────────────────
+const dial = new RotationDial(dialCanvas, angle => {
+  state.options.rotation = angle;
+  rotationVal.textContent = Math.round(angle) + '°';
+  render();
 });
 
 downloadBtn.addEventListener('click', () => {
@@ -174,7 +173,7 @@ function render() {
 
 function drawAxo(cv, img, opts) {
   const {
-    angle, numLayers, layerGap, edgeH, maxW, orient,
+    angle, numLayers, layerGap, edgeH, maxW, rotation,
     layerColor, bgColor, grid, glow,
   } = opts;
 
@@ -187,36 +186,27 @@ function drawAxo(cv, img, opts) {
   const W = img.naturalWidth  * scale;
   const H = img.naturalHeight * scale;
 
-  // Depth direction per-layer step in canvas space (upper-right)
   const dX = layerGap * cosA;
   const dY = layerGap * sinA;
 
-  // Padding
   const padX = 50;
   const padY = 50;
 
   const oy = padY + H + (numLayers - 1) * dY;
   const ox = padX;
 
-  const cvW = Math.ceil(ox + W * cosA + (numLayers - 1) * dX + padX + edgeH);
-  const cvH = Math.ceil(oy + W * sinA + edgeH + padY);
+  const baseW = Math.ceil(ox + W * cosA + (numLayers - 1) * dX + padX + edgeH);
+  const baseH = Math.ceil(oy + W * sinA + edgeH + padY);
 
-  cv.width  = cvW;
-  cv.height = cvH;
+  // Always draw into an offscreen canvas, then rotate onto cv
+  const off = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
+  const ctx = off.getContext('2d');
 
-  // For 'left' orientation draw into an offscreen canvas then flip.
-  // We can't use ctx.scale(-1,1) because ctx.setTransform() (used for images)
-  // replaces the current transform entirely, bypassing any canvas-level flip.
-  const offscreen = orient === 'left'
-    ? Object.assign(document.createElement('canvas'), { width: cvW, height: cvH })
-    : null;
-  const ctx = offscreen ? offscreen.getContext('2d') : cv.getContext('2d');
-
-  ctx.clearRect(0, 0, cvW, cvH);
+  ctx.clearRect(0, 0, baseW, baseH);
 
   // ── Background ──
   ctx.fillStyle = bgColor;
-  ctx.fillRect(0, 0, cvW, cvH);
+  ctx.fillRect(0, 0, baseW, baseH);
 
   // Helper: transform image-space point for layer i
   const tp = (i, x, y) => {
@@ -316,16 +306,36 @@ function drawAxo(cv, img, opts) {
     strokePoly(ctx, [TL, TR, BR, BL], `rgba(255,255,255,${outlineAlpha})`, 1);
   }
 
-  // If we used an offscreen canvas, blit it onto the real canvas flipped
-  if (offscreen) {
-    const mainCtx = cv.getContext('2d');
-    mainCtx.clearRect(0, 0, cvW, cvH);
-    mainCtx.save();
-    mainCtx.translate(cvW, 0);
-    mainCtx.scale(-1, 1);
-    mainCtx.drawImage(offscreen, 0, 0);
-    mainCtx.restore();
-  }
+  // ── Blit offscreen onto cv with rotation applied ──
+  const rotRad = rotation * Math.PI / 180;
+  // Compute tight bounding box of the rotated rectangle
+  const corners = [
+    [0,      0],
+    [baseW,  0],
+    [baseW,  baseH],
+    [0,      baseH],
+  ].map(([x, y]) => [
+    x * Math.cos(rotRad) - y * Math.sin(rotRad),
+    x * Math.sin(rotRad) + y * Math.cos(rotRad),
+  ]);
+  const xs = corners.map(c => c[0]);
+  const ys = corners.map(c => c[1]);
+  const minX = Math.min(...xs), maxX = Math.max(...xs);
+  const minY = Math.min(...ys), maxY = Math.max(...ys);
+  const cvW = Math.ceil(maxX - minX);
+  const cvH = Math.ceil(maxY - minY);
+
+  cv.width  = cvW;
+  cv.height = cvH;
+
+  const mainCtx = cv.getContext('2d');
+  mainCtx.fillStyle = bgColor;
+  mainCtx.fillRect(0, 0, cvW, cvH);
+  mainCtx.save();
+  mainCtx.translate(cvW / 2, cvH / 2);
+  mainCtx.rotate(rotRad);
+  mainCtx.drawImage(off, -baseW / 2, -baseH / 2);
+  mainCtx.restore();
 }
 
 // ── Grid overlay ─────────────────────────────────────────
@@ -391,3 +401,128 @@ function shadeHex(hex, frac) {
 }
 
 function clamp(v) { return Math.max(0, Math.min(255, v)); }
+
+// ── Rotation Dial ─────────────────────────────────────────
+// Canvas-based drag-to-rotate knob control.
+
+class RotationDial {
+  constructor(cv, onChange) {
+    this.cv       = cv;
+    this.ctx      = cv.getContext('2d');
+    this.angle    = 0;      // degrees
+    this.onChange = onChange;
+    this.dragging = false;
+    this.lastAngle = null;
+
+    cv.addEventListener('mousedown',  e => this._down(e));
+    cv.addEventListener('touchstart', e => this._down(e), { passive: false });
+    window.addEventListener('mousemove',  e => this._move(e));
+    window.addEventListener('touchmove',  e => this._move(e), { passive: false });
+    window.addEventListener('mouseup',    () => this._up());
+    window.addEventListener('touchend',   () => this._up());
+
+    this._draw();
+  }
+
+  _clientXY(e) {
+    return e.touches
+      ? [e.touches[0].clientX, e.touches[0].clientY]
+      : [e.clientX, e.clientY];
+  }
+
+  _angleFromEvent(e) {
+    const rect = this.cv.getBoundingClientRect();
+    const [cx, cy] = [rect.left + rect.width / 2, rect.top + rect.height / 2];
+    const [mx, my] = this._clientXY(e);
+    // atan2 gives angle from +x axis; offset by -90° so 0° is top
+    return ((Math.atan2(my - cy, mx - cx) * 180 / Math.PI) + 90 + 360) % 360;
+  }
+
+  _down(e) {
+    this.dragging  = true;
+    this.lastAngle = this._angleFromEvent(e);
+    e.preventDefault();
+  }
+
+  _move(e) {
+    if (!this.dragging) return;
+    const next = this._angleFromEvent(e);
+    let delta = next - this.lastAngle;
+    // Handle wrap-around
+    if (delta >  180) delta -= 360;
+    if (delta < -180) delta += 360;
+    this.angle = (this.angle + delta + 360) % 360;
+    this.lastAngle = next;
+    this._draw();
+    this.onChange(this.angle);
+    e.preventDefault();
+  }
+
+  _up() { this.dragging = false; }
+
+  _draw() {
+    const { cv, ctx, angle } = this;
+    const size = cv.width;
+    const cx   = size / 2;
+    const cy   = size / 2;
+    const r    = size / 2 - 3;
+
+    ctx.clearRect(0, 0, size, size);
+
+    // Track ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.strokeStyle = '#2a2d45';
+    ctx.lineWidth   = 2;
+    ctx.stroke();
+
+    // Filled disc
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, 0, Math.PI * 2);
+    ctx.fillStyle = '#1a1d2e';
+    ctx.fill();
+
+    // Tick marks every 45°
+    for (let a = 0; a < 360; a += 45) {
+      const rad   = (a - 90) * Math.PI / 180;
+      const inner = r - 5;
+      ctx.beginPath();
+      ctx.moveTo(cx + Math.cos(rad) * inner, cy + Math.sin(rad) * inner);
+      ctx.lineTo(cx + Math.cos(rad) * r,     cy + Math.sin(rad) * r);
+      ctx.strokeStyle = '#3a3d5a';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    }
+
+    // Filled arc showing progress from 0 to current angle
+    if (angle > 0) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r - 1, -Math.PI / 2, (angle - 90) * Math.PI / 180);
+      ctx.strokeStyle = 'rgba(99,102,241,0.35)';
+      ctx.lineWidth   = 3;
+      ctx.stroke();
+    }
+
+    // Indicator line
+    const rad    = (angle - 90) * Math.PI / 180;
+    const dotDist = r - 7;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(rad) * dotDist, cy + Math.sin(rad) * dotDist);
+    ctx.strokeStyle = '#6366f1';
+    ctx.lineWidth   = 1.5;
+    ctx.stroke();
+
+    // Indicator dot
+    ctx.beginPath();
+    ctx.arc(cx + Math.cos(rad) * dotDist, cy + Math.sin(rad) * dotDist, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+
+    // Centre dot
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, Math.PI * 2);
+    ctx.fillStyle = '#6366f1';
+    ctx.fill();
+  }
+}
