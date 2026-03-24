@@ -177,7 +177,7 @@ const dialCanvas   = document.getElementById('rotation-dial');
 
 function newLayerObj(img = null, name = null) {
   const id = String(++_layerIdCounter);
-  return { id, img, name: name || `Layer ${id}` };
+  return { id, img, name: name || `Layer ${id}`, radius: 0 };
 }
 
 function addLayer(img = null) {
@@ -272,7 +272,36 @@ function renderLayerList() {
     removeBtn.title = 'Remove layer';
     removeBtn.addEventListener('click', () => removeLayer(layer.id));
 
-    item.append(handle, thumbWrap, name, removeBtn);
+    const topRow = document.createElement('div');
+    topRow.className = 'layer-item-row';
+    topRow.append(handle, thumbWrap, name, removeBtn);
+
+    // Radius row
+    const radiusRow = document.createElement('div');
+    radiusRow.className = 'layer-radius-row';
+
+    const radiusLabel = document.createElement('label');
+    radiusLabel.textContent = 'Radius';
+
+    const radiusSlider = document.createElement('input');
+    radiusSlider.type  = 'range';
+    radiusSlider.min   = 0;
+    radiusSlider.max   = 60;
+    radiusSlider.step  = 1;
+    radiusSlider.value = layer.radius;
+
+    const radiusVal = document.createElement('span');
+    radiusVal.className   = 'layer-radius-val';
+    radiusVal.textContent = layer.radius + 'px';
+
+    radiusSlider.addEventListener('input', () => {
+      layer.radius = +radiusSlider.value;
+      radiusVal.textContent = layer.radius + 'px';
+      render();
+    });
+
+    radiusRow.append(radiusLabel, radiusSlider, radiusVal);
+    item.append(topRow, radiusRow);
 
     // ── Drag & drop reorder ──
     item.addEventListener('dragstart', e => {
@@ -556,12 +585,14 @@ function drawAxo(cv, layers, opts) {
       ctx.restore();
     }
 
+    const lr = layers[i].radius || 0;
+
     if (i === 0 && glow) {
       // Composite glow only over actual image pixels using a temp canvas
       const tmp = Object.assign(document.createElement('canvas'), { width: baseW, height: baseH });
       const tc = tmp.getContext('2d');
       tc.save();
-      clipPoly(tc, [TL, TR, BR, BL]);
+      clipPoly(tc, [TL, TR, BR, BL], lr);
       tc.setTransform(cosA, sinA, 0, 1, lox, loy - H);
       tc.drawImage(layers[i].img, 0, 0, W, H);
       tc.restore();
@@ -574,7 +605,7 @@ function drawAxo(cv, layers, opts) {
       ctx.drawImage(tmp, 0, 0);
     } else {
       ctx.save();
-      clipPoly(ctx, [TL, TR, BR, BL]);
+      clipPoly(ctx, [TL, TR, BR, BL], lr);
       ctx.setTransform(cosA, sinA, 0, 1, lox, loy - H);
       ctx.drawImage(layers[i].img, 0, 0, W, H);
       ctx.restore();
@@ -666,12 +697,31 @@ function strokePoly(ctx, pts, style, lw) {
   ctx.stroke();
 }
 
-function clipPoly(ctx, pts) {
-  ctx.beginPath();
-  ctx.moveTo(pts[0][0], pts[0][1]);
-  for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
-  ctx.closePath();
+function clipPoly(ctx, pts, r = 0) {
+  roundedPolyPath(ctx, pts, r);
   ctx.clip();
+}
+
+function roundedPolyPath(ctx, pts, r) {
+  const n = pts.length;
+  ctx.beginPath();
+  for (let i = 0; i < n; i++) {
+    const prev = pts[(i - 1 + n) % n];
+    const curr = pts[i];
+    const next = pts[(i + 1) % n];
+    const dx1 = prev[0] - curr[0], dy1 = prev[1] - curr[1];
+    const dx2 = next[0] - curr[0], dy2 = next[1] - curr[1];
+    const len1 = Math.hypot(dx1, dy1);
+    const len2 = Math.hypot(dx2, dy2);
+    const cr   = Math.min(r, len1 / 2, len2 / 2);
+    const sx   = curr[0] + (dx1 / len1) * cr;
+    const sy   = curr[1] + (dy1 / len1) * cr;
+    const ex   = curr[0] + (dx2 / len2) * cr;
+    const ey   = curr[1] + (dy2 / len2) * cr;
+    if (i === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
+    ctx.quadraticCurveTo(curr[0], curr[1], ex, ey);
+  }
+  ctx.closePath();
 }
 
 function shadeHex(hex, frac) {
