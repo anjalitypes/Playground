@@ -209,7 +209,7 @@ function buildAnnotatedPaperPanel(x, y, w, h) {
   ];
   let chipX = w - 270;
   chips.forEach(chip => {
-    const chipBg = makeRect(chip.label + ' Chip', chipX, 14, 80, 22, chip.color.replace('#', ''), 0.15, { cornerRadius: 100 });
+    const chipBg = makeRect(chip.label + ' Chip', chipX, 14, 80, 22, chip.color, 0.15, { cornerRadius: 100 });
     panel.appendChild(chipBg);
     const chipTxt = makeText(chip.label, chipX + 6, 19, 8, 'Medium', chip.color, { width: 68 });
     panel.appendChild(chipTxt);
@@ -418,15 +418,19 @@ async function buildScreen2(page) {
 figma.ui.onmessage = async (msg) => {
   if (msg.type !== 'create-screens') return;
 
-  await loadFonts();
+  try {
+    await loadFonts();
 
-  const page = figma.currentPage;
+    const page = figma.currentPage;
 
-  await buildScreen1(page);
-  await buildScreen2(page);
+    await buildScreen1(page);
+    await buildScreen2(page);
 
-  // Zoom to fit
-  figma.viewport.scrollAndZoomIntoView(page.children.slice(-2));
+    // Zoom to fit
+    figma.viewport.scrollAndZoomIntoView(page.children.slice(-2));
 
-  figma.ui.postMessage({ type: 'done', text: 'Screens created! 2 frames added.' });
+    figma.ui.postMessage({ type: 'done', text: 'Screens created! 2 frames added.' });
+  } catch (err) {
+    figma.ui.postMessage({ type: 'error', text: String(err) });
+  }
 };

@@ -38,8 +38,13 @@
 
     window.onmessage = (event) => {
       const msg = event.data.pluginMessage;
-      if (msg && msg.type === 'done') {
+      if (!msg) return;
+      if (msg.type === 'done') {
         document.getElementById('status').textContent = '✅ ' + msg.text;
+        document.getElementById('create-btn').disabled = false;
+      } else if (msg.type === 'error') {
+        document.getElementById('status').style.color = '#ff4d4d';
+        document.getElementById('status').textContent = '❌ Error: ' + msg.text;
         document.getElementById('create-btn').disabled = false;
       }
     };
