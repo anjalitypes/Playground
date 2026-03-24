@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: -apple-system, sans-serif; padding: 16px; background: #1a1d2e; color: #e8eaf6; }
+    h2 { font-size: 14px; margin-bottom: 8px; color: #e8eaf6; }
+    p { font-size: 12px; color: #8892b0; margin-bottom: 16px; line-height: 1.5; }
+    button {
+      width: 100%;
+      padding: 10px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:hover { opacity: 0.9; }
+    #status { margin-top: 12px; font-size: 11px; color: #8892b0; }
+  </style>
+</head>
+<body>
+  <h2>🎓 AI Paper Detection Tool</h2>
+  <p>Creates 2 screens in your Figma file:<br>
+    • <strong>Screen 1</strong> — Upload State<br>
+    • <strong>Screen 2</strong> — Results State
+  </p>
+  <button id="create-btn" onclick="create()">Create Screens</button>
+  <div id="status"></div>
+
+  <script>
+    function create() {
+      document.getElementById('create-btn').disabled = true;
+      document.getElementById('status').textContent = 'Creating screens...';
+      parent.postMessage({ pluginMessage: { type: 'create-screens' } }, '*');
+    }
+
+    window.onmessage = (event) => {
+      const msg = event.data.pluginMessage;
+      if (msg && msg.type === 'done') {
+        document.getElementById('status').textContent = '✅ ' + msg.text;
+        document.getElementById('create-btn').disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
