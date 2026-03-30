@@ -2,7 +2,7 @@
    ANJALI PATEL — PORTFOLIO
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300;1,9..40,400&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&display=swap');
 
 /* ————————————————————————————————
    RESET & TOKENS
@@ -10,24 +10,24 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --bg:            #FAFAF7;
-  --bg-card:       #FFFFFF;
-  --bg-subtle:     #F4F4F1;
-  --text:          #141413;
-  --text-muted:    #6B6B69;
-  --text-subtle:   #A8A8A5;
-  --accent:        #4F46E5;
-  --accent-hover:  #3730C4;
-  --accent-light:  #EEECFF;
-  --border:        #E6E6E2;
-  --border-strong: #C8C8C3;
+  --bg:            #111110;
+  --bg-card:       #1C1C1A;
+  --bg-subtle:     #222220;
+  --text:          #F0F0EC;
+  --text-muted:    #A0A09C;
+  --text-subtle:   #5A5A57;
+  --accent:        #8B85FF;
+  --accent-hover:  #A8A3FF;
+  --accent-light:  #1E1B40;
+  --border:        #2E2E2B;
+  --border-strong: #444441;
   --nav-h:         60px;
   --radius-sm:     8px;
   --radius-md:     14px;
   --radius-lg:     20px;
   --radius-xl:     28px;
   --font-sans:     'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-serif:    'Instrument Serif', Georgia, 'Times New Roman', serif;
+  --font-serif:    'Cormorant Garamond', Georgia, 'Times New Roman', serif;
   --ease-out:      cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
 }
@@ -62,7 +62,7 @@ nav {
   align-items: center;
   justify-content: space-between;
   padding: 0 48px;
-  background: rgba(250, 250, 247, 0.82);
+  background: rgba(17, 17, 16, 0.82);
   backdrop-filter: blur(20px) saturate(1.4);
   -webkit-backdrop-filter: blur(20px) saturate(1.4);
   border-bottom: 1px solid transparent;
@@ -71,7 +71,7 @@ nav {
 
 nav.scrolled {
   border-bottom-color: var(--border);
-  background: rgba(250, 250, 247, 0.95);
+  background: rgba(17, 17, 16, 0.95);
 }
 
 .nav-logo {
@@ -141,7 +141,7 @@ nav.scrolled {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -160,9 +160,9 @@ nav.scrolled {
 
 .hero-heading {
   font-family: var(--font-serif);
-  font-size: clamp(42px, 4.5vw, 62px);
-  line-height: 1.07;
-  letter-spacing: -0.025em;
+  font-size: clamp(48px, 5.5vw, 72px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
   color: var(--text);
   margin-bottom: 28px;
   opacity: 0;
@@ -256,7 +256,7 @@ nav.scrolled {
   max-width: 460px;
   aspect-ratio: 9/16;
   border-radius: 36px;
-  background: linear-gradient(145deg, #F0EEFF 0%, #E4DEFF 40%, #D5E8FF 100%);
+  background: linear-gradient(145deg, #1A1730 0%, #1E1B40 40%, #131B30 100%);
   box-shadow:
     0 60px 120px rgba(79, 70, 229, 0.15),
     0 20px 40px rgba(79, 70, 229, 0.08),
@@ -276,8 +276,8 @@ nav.scrolled {
 
 .device-ui-bar {
   height: 48px;
-  background: rgba(255,255,255,0.9);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
+  background: rgba(30, 30, 28, 0.95);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
   display: flex;
   align-items: center;
   padding: 0 20px;
@@ -337,7 +337,7 @@ nav.scrolled {
 
 .device-ui-content {
   flex: 1;
-  background: white;
+  background: #1C1C1A;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -405,7 +405,7 @@ nav.scrolled {
 }
 
 .hero-badge-label {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -428,7 +428,7 @@ nav.scrolled {
 }
 
 .section-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -511,7 +511,7 @@ nav.scrolled {
 }
 
 .tag {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.04em;
   padding: 4px 11px;
@@ -567,7 +567,7 @@ nav.scrolled {
 }
 
 .footer-copy {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
 }
 
@@ -578,7 +578,7 @@ nav.scrolled {
 }
 
 .footer-links a {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   text-decoration: none;
   transition: color 0.2s;
@@ -597,7 +597,7 @@ nav.scrolled {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   margin-bottom: 56px;
 }
@@ -623,7 +623,7 @@ nav.scrolled {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -639,9 +639,9 @@ nav.scrolled {
 
 .case-title {
   font-family: var(--font-serif);
-  font-size: clamp(38px, 4.5vw, 58px);
-  line-height: 1.07;
-  letter-spacing: -0.025em;
+  font-size: clamp(44px, 5vw, 66px);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
   margin-bottom: 20px;
 }
 
@@ -682,7 +682,7 @@ nav.scrolled {
 }
 
 .impact-label {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-muted);
   line-height: 1.5;
 }
@@ -708,7 +708,7 @@ nav.scrolled {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -718,8 +718,8 @@ nav.scrolled {
 }
 
 .placeholder-img--abc {
-  background: linear-gradient(145deg, #EBE5D8 0%, #D4C9B4 50%, #C5B89A 100%);
-  color: rgba(60, 50, 30, 0.4);
+  background: linear-gradient(145deg, #2A2318 0%, #3A3020 50%, #2A2318 100%);
+  color: rgba(200, 180, 140, 0.3);
 }
 
 .placeholder-img--cliffsnotes {
@@ -763,7 +763,7 @@ nav.scrolled {
 }
 
 .case-section-tag {
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -844,7 +844,7 @@ nav.scrolled {
 }
 
 .callout-quote cite {
-  font-size: 13px;
+  font-size: 14px;
   font-style: normal;
   color: var(--text-muted);
 }
@@ -942,7 +942,7 @@ nav.scrolled {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   text-decoration: none;
@@ -1036,7 +1036,7 @@ nav.scrolled {
 
 .play-item-label {
   padding: 14px 16px 16px;
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 500;
   color: var(--text-muted);
   line-height: 1.4;
@@ -1058,7 +1058,7 @@ nav.scrolled {
 }
 
 .play-hover-overlay span {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: white;
   letter-spacing: 0.06em;
