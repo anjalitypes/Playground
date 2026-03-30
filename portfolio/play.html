@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Play — Anjali Patel</title>
+  <meta name="description" content="Ongoing explorations of patterns, components, vibe coding, and more by Anjali Patel." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* Play item heights for variety */
+    .ph-sm  { min-height: 180px; }
+    .ph-md  { min-height: 240px; }
+    .ph-lg  { min-height: 300px; }
+    .ph-xl  { min-height: 360px; }
+
+    /* CSS art helpers */
+    .art-toggle {
+      width: 72px; height: 40px;
+      border-radius: 20px;
+      background: rgba(255,255,255,0.25);
+      border: 2px solid rgba(255,255,255,0.5);
+      position: relative;
+    }
+    .art-toggle::after {
+      content: '';
+      position: absolute;
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: white;
+      top: 3px; right: 3px;
+    }
+
+    .art-chat-bubble {
+      background: rgba(255,255,255,0.2);
+      border-radius: 16px 16px 4px 16px;
+      padding: 10px 14px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.8);
+      max-width: 160px;
+      line-height: 1.4;
+    }
+
+    .art-card {
+      background: rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .art-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: rgba(255,255,255,0.3);
+      margin-bottom: 6px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ———————————————————— NAV ———————————————————— -->
+  <nav>
+    <a href="index.html" class="nav-logo">Anjali Patel</a>
+    <ul class="nav-links">
+      <li><a href="index.html#work">Work</a></li>
+      <li><a href="play.html" class="active">Play</a></li>
+    </ul>
+  </nav>
+
+  <main class="page-wrapper">
+    <div class="container">
+
+      <!-- ———————————————————— PLAY HERO ———————————————————— -->
+      <div class="play-hero">
+        <h1 class="play-heading">Ongoing explorations</h1>
+        <p class="play-sub">
+          Patterns, components, vibe coding, and more — a living playground of
+          ideas across interaction design, visual systems, and emerging interfaces.
+        </p>
+      </div>
+
+      <!-- ———————————————————— MASONRY GRID ———————————————————— -->
+      <div class="play-grid">
+
+        <!-- 1. File Gallery Tool -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-dark ph-lg">
+            <div class="play-art" style="gap: 10px; width: 100%;">
+              <div style="display:flex; gap:8px; margin-bottom:4px;">
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.1)"></div>
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.07)"></div>
+                <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.05)"></div>
+              </div>
+              <div style="height:1px;background:rgba(255,255,255,0.1);width:100%"></div>
+              <div class="art-bar" style="width:80%"></div>
+              <div class="art-bar" style="width:60%"></div>
+              <div class="art-bar" style="width:70%"></div>
+            </div>
+          </div>
+          <div class="play-item-label">File Gallery tool with Codedesign.io — making interaction more human</div>
+        </div>
+
+        <!-- 2. Day & Night Toggle -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-purple ph-sm" style="align-items:center; justify-content:center;">
+            <div class="art-toggle"></div>
+          </div>
+          <div class="play-item-label">Day &amp; Night Toggle</div>
+        </div>
+
+        <!-- 3. Education App Light/Dark -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-orange ph-md">
+            <div class="play-art">
+              <div class="art-card">
+                <div class="art-bar" style="width:50%"></div>
+                <div style="display:flex; gap:8px; margin-top:8px;">
+                  <div style="width:40px;height:40px;border-radius:8px;background:rgba(255,255,255,0.2)"></div>
+                  <div style="flex:1"><div class="art-bar" style="margin-top:6px"></div><div class="art-bar" style="width:60%"></div></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="play-item-label">Education App, Light &amp; Night mode</div>
+        </div>
+
+        <!-- 4. Healthcare App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-teal ph-lg">
+            <div class="play-art">
+              <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+                <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.2)"></div>
+                <div style="flex:1"><div class="art-bar"></div><div class="art-bar" style="width:60%"></div></div>
+              </div>
+              <div class="art-card"><div class="art-bar"></div><div class="art-bar" style="width:70%"></div></div>
+              <div class="art-card" style="margin-top:8px"><div class="art-bar"></div><div class="art-bar" style="width:50%"></div></div>
+            </div>
+          </div>
+          <div class="play-item-label">Holistic Healthcare App — well-being meets doctor visits</div>
+        </div>
+
+        <!-- 5. Music Player App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-dark ph-md" style="align-items:center; justify-content:center; flex-direction:column; gap:16px;">
+            <div style="width:80px;height:80px;border-radius:50%;background:linear-gradient(135deg,rgba(139,92,246,0.6),rgba(79,70,229,0.6));border:3px solid rgba(255,255,255,0.2)"></div>
+            <div style="display:flex; gap:16px; align-items:center;">
+              <div style="width:20px;height:20px;background:rgba(255,255,255,0.2);border-radius:4px;clip-path:polygon(0 0, 100% 50%, 0 100%)"></div>
+              <div style="width:28px;height:28px;background:rgba(255,255,255,0.3);border-radius:50%"></div>
+              <div style="width:20px;height:20px;background:rgba(255,255,255,0.2);border-radius:4px;clip-path:polygon(100% 0, 0 50%, 100% 100%)"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Music Player App</div>
+        </div>
+
+        <!-- 6. Vibe-coded slides -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-indigo ph-sm">
+            <div class="play-art" style="flex-direction:row; flex-wrap:wrap; gap:6px; align-items:center;">
+              <div style="flex:1;min-width:80px;height:50px;background:rgba(255,255,255,0.1);border-radius:6px"></div>
+              <div style="flex:1;min-width:80px;height:50px;background:rgba(255,255,255,0.07);border-radius:6px"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Vibe-coded slides for a presentation starter</div>
+        </div>
+
+        <!-- 7. Messaging App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-blue ph-xl">
+            <div class="play-art" style="gap: 10px;">
+              <div class="art-chat-bubble">Hey! Did you see the latest designs?</div>
+              <div class="art-chat-bubble" style="align-self:flex-end; border-radius:16px 16px 16px 4px;">Yes! They look amazing 🎉</div>
+              <div class="art-chat-bubble">Working on the next iteration now</div>
+            </div>
+          </div>
+          <div class="play-item-label">Messaging App</div>
+        </div>
+
+        <!-- 8. Sustainability website -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-green ph-md">
+            <div class="play-art">
+              <div style="font-size:16px;font-weight:600;color:white;margin-bottom:8px;line-height:1.3">Step toward<br/>the future.</div>
+              <div class="art-bar" style="width:70%"></div>
+              <div class="art-bar" style="width:50%"></div>
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <div style="padding:6px 10px;background:rgba(255,255,255,0.2);border-radius:100px;font-size:10px;color:white">Eco</div>
+                <div style="padding:6px 10px;background:rgba(255,255,255,0.2);border-radius:100px;font-size:10px;color:white">Sustainable</div>
+              </div>
+            </div>
+          </div>
+          <div class="play-item-label">Sustainability / climate website</div>
+        </div>
+
+        <!-- 9. Traffic Light Interaction -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-dark ph-sm" style="align-items:center; justify-content:center;">
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="width:28px;height:28px;border-radius:50%;background:#EF4444;box-shadow:0 0 16px rgba(239,68,68,0.6)"></div>
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1)"></div>
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.1)"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Quiz Traffic Light interaction free</div>
+        </div>
+
+        <!-- 10. Smart Home Component -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder ph-md" style="background:#000; align-items:center; justify-content:center;">
+            <div style="text-align:center">
+              <div style="width:60px;height:60px;border-radius:50%;border:3px solid white;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;">
+                <div style="width:20px;height:20px;border-radius:4px;background:white"></div>
+              </div>
+              <div style="color:white;font-size:13px;font-weight:500;letter-spacing:0.04em">ON</div>
+            </div>
+          </div>
+          <div class="play-item-label">Smart Home Component</div>
+        </div>
+
+        <!-- 11. Breadcrumb Component -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-warm ph-sm" style="align-items:center; justify-content:center;">
+            <div style="display:flex;align-items:center;gap:8px;background:white;padding:10px 16px;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,0.1)">
+              <span style="font-size:11px;color:#6B6B6B">Order</span>
+              <span style="font-size:11px;color:#9A9A9A">›</span>
+              <span style="font-size:11px;color:#6B6B6B">Step</span>
+              <span style="font-size:11px;color:#9A9A9A">›</span>
+              <span style="font-size:11px;color:#4F46E5;font-weight:600">My Cart</span>
+            </div>
+          </div>
+          <div class="play-item-label">Breadcrumb Component</div>
+        </div>
+
+        <!-- 12. Social Share Button -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-dark ph-sm" style="align-items:center; justify-content:center;">
+            <div style="display:flex;align-items:center;gap:10px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);padding:14px 24px;border-radius:12px">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span style="font-size:12px;font-weight:600;color:white;letter-spacing:0.08em;text-transform:uppercase">Share</span>
+            </div>
+          </div>
+          <div class="play-item-label">Social Media Button</div>
+        </div>
+
+        <!-- 13. Watercolor food icons -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-cream ph-md" style="align-items:center; justify-content:center; gap:12px; flex-direction:row; flex-wrap:wrap; padding:20px;">
+            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#FCA5A5,#EF4444)"></div>
+            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#86EFAC,#22C55E)"></div>
+            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#FCD34D,#F59E0B)"></div>
+            <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#C4B5FD,#8B5CF6)"></div>
+          </div>
+          <div class="play-item-label">Watercolor food icons</div>
+        </div>
+
+        <!-- 14. Banking App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-slate ph-lg">
+            <div class="play-art">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                <div><div class="art-bar" style="width:60px;margin-bottom:4px"></div><div style="font-size:20px;font-weight:600;color:white">$4,280</div></div>
+                <div style="width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,0.15)"></div>
+              </div>
+              <div class="art-card"><div class="art-bar"></div><div style="display:flex;gap:6px;margin-top:6px;"><div style="flex:1;height:32px;border-radius:8px;background:rgba(255,255,255,0.1)"></div><div style="flex:1;height:32px;border-radius:8px;background:rgba(255,255,255,0.07)"></div><div style="flex:1;height:32px;border-radius:8px;background:rgba(255,255,255,0.05)"></div></div></div>
+            </div>
+          </div>
+          <div class="play-item-label">Banking App</div>
+        </div>
+
+        <!-- 15. Alert Component -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-cobalt ph-sm" style="align-items:center; justify-content:center; padding: 20px;">
+            <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-left:3px solid #60A5FA;border-radius:8px;padding:12px 16px;width:100%;max-width:200px">
+              <div style="font-size:12px;font-weight:600;color:#60A5FA;margin-bottom:4px">Reminder</div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.7)">Black Lives STILL Matter</div>
+            </div>
+          </div>
+          <div class="play-item-label">Alert Component</div>
+        </div>
+
+        <!-- 16. Wedding App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-pink ph-xl">
+            <div class="play-art">
+              <div style="font-size:18px;color:white;font-weight:300;font-style:italic;margin-bottom:8px">Kai &amp; Vibhav</div>
+              <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <div style="flex:1;height:72px;border-radius:8px;background:rgba(255,255,255,0.2)"></div>
+                <div style="flex:1;height:72px;border-radius:8px;background:rgba(255,255,255,0.15)"></div>
+              </div>
+              <div class="art-bar"></div>
+              <div class="art-bar" style="width:70%"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Wedding App</div>
+        </div>
+
+        <!-- 17. Delivery App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-teal ph-md">
+            <div class="play-art">
+              <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+                <div style="width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.3)"></div>
+                <div><div class="art-bar" style="width:80px;margin-bottom:4px"></div><div class="art-bar" style="width:60px"></div></div>
+              </div>
+              <div class="art-card"><div class="art-bar"></div><div class="art-bar" style="width:60%"></div></div>
+            </div>
+          </div>
+          <div class="play-item-label">Delivery App</div>
+        </div>
+
+        <!-- 18. Voice App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-purple ph-lg" style="align-items:center; justify-content:center; flex-direction:column; gap:20px;">
+            <div style="width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.15);border:3px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+            </div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.6);text-align:center">How can I help you?</div>
+          </div>
+          <div class="play-item-label">Voice App, brand &amp; season edition</div>
+        </div>
+
+        <!-- 19. Kids Storyboard Pro -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-blue ph-md" style="align-items:center; justify-content:center; gap:12px; flex-direction:row; padding:20px;">
+            <div style="width:60px;height:80px;border-radius:12px;background:rgba(255,255,255,0.15)"></div>
+            <div style="flex:1">
+              <div style="font-size:12px;font-weight:600;color:white;margin-bottom:8px">Adventure Time</div>
+              <div class="art-bar"></div>
+              <div class="art-bar" style="width:70%"></div>
+              <div class="art-bar" style="width:50%"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Kids Storyboard Pro — Adventure Time</div>
+        </div>
+
+        <!-- 20. Donut Arcade -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-neon ph-lg" style="align-items:center; justify-content:center; flex-direction:column; gap:8px;">
+            <div style="font-size:28px;font-weight:900;background:linear-gradient(135deg,#FF6B6B,#FF1493,#9B59B6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;line-height:1.1;letter-spacing:-0.02em">ARCADE<br/>DONUT</div>
+            <div style="display:flex;gap:8px;margin-top:8px;">
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,107,107,0.4);border:2px solid rgba(255,107,107,0.7)"></div>
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(255,20,147,0.4);border:2px solid rgba(255,20,147,0.7)"></div>
+              <div style="width:28px;height:28px;border-radius:50%;background:rgba(155,89,182,0.4);border:2px solid rgba(155,89,182,0.7)"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Donut Arcade</div>
+        </div>
+
+        <!-- 21. Banking Flow -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-cobalt ph-md">
+            <div class="play-art">
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);margin-bottom:6px;letter-spacing:0.06em;text-transform:uppercase">Banking Flow</div>
+              <div class="art-bar" style="width:100%;height:8px;background:rgba(255,255,255,0.15)"></div>
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.5)"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2)"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2)"></div>
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.2)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="play-item-label">Banking Flow</div>
+        </div>
+
+        <!-- 22. Landing Page -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-neutral ph-md" style="background:linear-gradient(145deg,#E8E5D5,#D4CFC0)">
+            <div class="play-art" style="gap:6px;">
+              <div style="font-size:14px;font-weight:700;color:#3D3A2F;margin-bottom:4px">NATIONAL<br/>GRANDMA<br/>ALLIANCE</div>
+              <div style="height:1px;background:rgba(61,58,47,0.2)"></div>
+              <div style="height:5px;border-radius:3px;background:rgba(61,58,47,0.15);width:60%"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Landing Page</div>
+        </div>
+
+        <!-- 23. Dancing Buildings -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-pink ph-lg" style="background:linear-gradient(145deg,#FCE4EC,#F8BBD9)">
+            <div class="play-art" style="align-items:center; justify-content:center; height:100%;">
+              <div style="display:flex;gap:6px;align-items:flex-end;">
+                <div style="width:24px;height:80px;background:rgba(180,50,100,0.3);border-radius:4px 4px 0 0"></div>
+                <div style="width:24px;height:120px;background:rgba(180,50,100,0.4);border-radius:4px 4px 0 0"></div>
+                <div style="width:24px;height:60px;background:rgba(180,50,100,0.2);border-radius:4px 4px 0 0"></div>
+                <div style="width:24px;height:100px;background:rgba(180,50,100,0.35);border-radius:4px 4px 0 0"></div>
+              </div>
+            </div>
+          </div>
+          <div class="play-item-label">Dancing Buildings Series — The Twins</div>
+        </div>
+
+        <!-- 24. Grocery Mapping App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-blue ph-xl">
+            <div class="play-art">
+              <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:12px;margin-bottom:8px">
+                <div style="display:flex;gap:8px;align-items:center">
+                  <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.2)"></div>
+                  <div style="flex:1"><div class="art-bar" style="width:80%"></div><div class="art-bar" style="width:50%"></div></div>
+                  <div style="width:20px;height:20px;border-radius:50%;background:rgba(255,255,255,0.2)"></div>
+                </div>
+              </div>
+              <div class="art-bar"></div>
+              <div class="art-bar" style="width:70%"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Grocery Mapping App</div>
+        </div>
+
+        <!-- 25. Single Product Website -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder ph-md" style="background:#F8F6F1; align-items:center; justify-content:center; flex-direction:column; gap:12px; padding:24px;">
+            <div style="width:60px;height:80px;border-radius:8px;background:linear-gradient(135deg,#E8E0D0,#C8BCA8)"></div>
+            <div style="text-align:center; width:100%">
+              <div style="height:6px;border-radius:3px;background:#C8C5BC;width:70%;margin:0 auto 6px"></div>
+              <div style="height:5px;border-radius:3px;background:#D8D5CC;width:50%;margin:0 auto"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Website — Single Product</div>
+        </div>
+
+        <!-- 26. Sailor Moon Website -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-night ph-lg" style="align-items:center; justify-content:center; flex-direction:column; gap:12px; padding: 24px;">
+            <div style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#FCD34D,#F59E0B);box-shadow:0 0 20px rgba(252,211,77,0.3)"></div>
+            <div style="font-size:12px;color:rgba(255,255,255,0.6);text-align:center;letter-spacing:0.06em;text-transform:uppercase">Sailor Moon</div>
+            <div style="display:flex;gap:6px;">
+              <div style="width:8px;height:8px;border-radius:50%;background:rgba(252,211,77,0.5)"></div>
+              <div style="width:8px;height:8px;border-radius:50%;background:rgba(252,211,77,0.3)"></div>
+              <div style="width:8px;height:8px;border-radius:50%;background:rgba(252,211,77,0.2)"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Sailor Moon Website</div>
+        </div>
+
+        <!-- 27. Choose 1 App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-cream ph-md" style="background:linear-gradient(145deg,#FDF4FF,#F3E8FF); align-items:center; justify-content:center; padding:24px;">
+            <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 8px 24px rgba(0,0,0,0.08);width:100%;max-width:160px;">
+              <div style="font-size:11px;color:#6B6B6B;margin-bottom:8px">Choose 1</div>
+              <div style="height:5px;border-radius:3px;background:#E8E8E4;margin-bottom:6px"></div>
+              <div style="height:5px;border-radius:3px;background:#E8E8E4;width:70%"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Choose 1</div>
+        </div>
+
+        <!-- 28. Neuroid Script App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-cobalt ph-md">
+            <div class="play-art">
+              <div style="font-size:10px;color:rgba(255,255,255,0.4);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px">Neuroid Script</div>
+              <div class="art-bar"></div>
+              <div class="art-bar" style="width:80%"></div>
+              <div class="art-bar" style="width:60%"></div>
+              <div style="display:flex;gap:6px;margin-top:8px;">
+                <div style="flex:1;height:28px;border-radius:6px;background:rgba(255,255,255,0.08)"></div>
+                <div style="flex:1;height:28px;border-radius:6px;background:rgba(255,255,255,0.08)"></div>
+              </div>
+            </div>
+          </div>
+          <div class="play-item-label">Neuroid Script App</div>
+        </div>
+
+        <!-- 29. Circa Max App -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-blue ph-lg">
+            <div class="play-art">
+              <div style="font-size:13px;font-weight:600;color:white;margin-bottom:12px">Circa Max</div>
+              <div style="display:flex;gap:6px;margin-bottom:10px;">
+                <div style="width:48px;height:48px;border-radius:10px;background:rgba(255,255,255,0.15)"></div>
+                <div style="flex:1;display:flex;flex-direction:column;gap:6px;justify-content:center"><div class="art-bar"></div><div class="art-bar" style="width:60%"></div></div>
+              </div>
+              <div class="art-bar"></div>
+              <div class="art-bar" style="width:70%"></div>
+              <div style="margin-top:10px;height:36px;border-radius:8px;background:rgba(255,255,255,0.15)"></div>
+            </div>
+          </div>
+          <div class="play-item-label">Circa Max App</div>
+        </div>
+
+        <!-- 30. Astro Bug (3D) -->
+        <div class="play-item">
+          <div class="play-item-visual play-placeholder play-bg-dark ph-xl" style="align-items:center; justify-content:center;">
+            <div style="position:relative; width:80px; height:120px;">
+              <div style="width:80px;height:120px;background:linear-gradient(145deg,#333,#111);border-radius:4px;transform:perspective(200px) rotateY(-20deg) rotateX(10deg);position:absolute;box-shadow:8px 8px 20px rgba(0,0,0,0.5)"></div>
+              <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transform:perspective(200px) rotateY(-20deg) rotateX(10deg)">
+                <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,0.3);border-radius:4px"></div>
+              </div>
+            </div>
+          </div>
+          <div class="play-item-label">Astro Bug</div>
+        </div>
+
+      </div><!-- /play-grid -->
+    </div><!-- /container -->
+  </main>
+
+  <!-- ———————————————————— FOOTER ———————————————————— -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="site-footer-inner">
+        <p class="footer-copy">© 2024 Anjali Patel</p>
+        <ul class="footer-links">
+          <li><a href="mailto:ap@anjali-patel.com">Email</a></li>
+          <li><a href="#">LinkedIn</a></li>
+          <li><a href="#">Resume</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
